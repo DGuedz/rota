@@ -23,6 +23,7 @@ import { x402Routes } from './payments/x402.routes';
 import { ContractEventsService } from './contracts/contract-events.service';
 import { ContractEventsIndexer } from './contracts/contract-events.indexer';
 import { metricsRoutes } from './accounting/metrics.routes';
+import { registerReputationRoutes } from './reputation/reputation.routes';
 
 // Carregar variáveis de ambiente
 dotenv.config({ path: '../../.env' });
@@ -39,7 +40,7 @@ const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 const domainEventService = new DomainEventService(prisma);
 const executionLogService = new ExecutionLogService(prisma);
 const eventBus = new RotaEventBus(domainEventService);
-const agentDispatcher = new AgentDispatcher(eventBus, executionLogService);
+const agentDispatcher = new AgentDispatcher(eventBus, executionLogService, prisma);
 
 // Inicializando Domínios Econômicos
 const intentRepo = new IntentRepository(prisma);
@@ -65,6 +66,9 @@ app.register(rfqRoutes, { prefix: '/rfq', rfqService, bidService });
   app.register(escrowRoutes, { prefix: '/escrow', escrowService });
   app.register(x402Routes, { prefix: '/payments' });
   app.register(metricsRoutes, { prefix: '/telemetry', prisma });
+
+  // Reputação
+  registerReputationRoutes(app, { prisma });
 
 // Conecta o Dispatcher ao barramento de eventos
 agentDispatcher.start();

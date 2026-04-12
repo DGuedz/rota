@@ -7,10 +7,10 @@ datasource db {
   url      = env("DATABASE_URL") 
 } 
 
-enum AgentStatus { 
-  ACTIVE 
-  SUSPENDED 
-  BANNED 
+enum AgentStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
 } 
 
 enum PriceMode {
@@ -153,7 +153,7 @@ model Agent {
   walletAddress    String      @unique 
   displayName      String? 
   status           AgentStatus @default(ACTIVE) 
-  reputationScore  Int         @default(0) 
+  reputationScore  Int         @default(100) 
   totalExecutions  Int         @default(0) 
   totalSuccesses   Int         @default(0) 
   totalDisputes    Int         @default(0) 

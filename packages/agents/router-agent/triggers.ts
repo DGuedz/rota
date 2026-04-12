@@ -52,5 +52,22 @@ export function resolveTrigger(event: RotaEvent): TriggerDefinition | undefined 
     };
   }
 
+  // Triggers do Trust Reputation Agent
+  if ([
+    'escrow.settled',
+    'escrow.slashed',
+    'proof.submitted',
+    'settlement.dispute',
+    'sla.failed'
+  ].includes(event.type)) {
+    return {
+      eventName: event.type,
+      source: event.source,
+      targetAgent: 'trust-reputation-agent',
+      debounceMs: 0,
+      retryStrategy: 'retry_with_backoff'
+    };
+  }
+
   return supportedTriggers.find(t => t.eventName === event.type && t.source === event.source);
 }

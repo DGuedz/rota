@@ -1,127 +1,85 @@
-import { RotaEvent, ExecutionResult, AgentAction } from '@rota/shared-types';
-import { StructuredLogger } from '../shared/structured-logger';
-import { getRequiredAction } from './triggers';
-import { reputationPolicies } from './policies';
-import { trustReputationAgentConfig } from './agent.config';
+import { ReputationSignal } from "../../../apps/api/src/reputation/reputation.types";
+import {
+  trustReputationTriggers,
+  TrustReputationTrigger,
+} from "./triggers";
 
-const logger = new StructuredLogger(trustReputationAgentConfig.id);
+export type TrustRotaEvent = {
+  eventId: string;
+  source: string;
+  type: string;
+  payload: Record<string, unknown>;
+  timestamp: string;
+};
 
-export async function runReputationAgent(event: RotaEvent): Promise<ExecutionResult> {
-  logger.info(event.eventId, 'receive_event', `Iniciando processamento de evento de reputação: ${event.type}`);
-  
-  try {
-    const requiredAction = getRequiredAction(event);
-    if (!requiredAction) {
-      return {
-        success: false,
-        actionsPerformed: [],
-        generatedArtifacts: [],
-        reason: 'Evento não mapeado para impacto em reputação.'
-      };
-    }
+export type TrustAgentResult = {
+  status: "COMPLETED" | "SKIPPED" | "FAILED";
+  decision: string;
+  signal?: ReputationSignal;
+  targetAgentId?: string;
+  sourceId?: string;
+  evidence?: Record<string, unknown>;
+  notes?: string[];
+};
 
-    const policyDecision = reputationPolicies.validateAction('recalculate_score');
-    if (!policyDecision.allowed) {
-      logger.warn(event.eventId, 'recalculate_score', policyDecision.reason);
-      return {
-        success: false,
-        actionsPerformed: [],
-        generatedArtifacts: [],
-        reason: policyDecision.reason
-      };
-    }
+function resolveTargetAgentId(payload: Record<string, unknown>): string | undefined {
+  const candidate =
+    payload.sellerAgentId ??
+    payload.providerAgentId ??
+    payload.agentId ??
+    payload.targetAgentId;
 
-    const agentId = event.payload.agentId;
-    if (!reputationPolicies.validateScoreUpdate(agentId, event.eventId)) {
-      logger.error(event.eventId, 'validate_score_update', 'Falta agentId ou eventId. Reputação não pode ser alterada sem evento correlato.');
-      return {
-        success: false,
-        actionsPerformed: [],
-        generatedArtifacts: [],
-        reason: 'Validation failed: Cannot update reputation without a valid agentId and eventId.'
-      };
-    }
+  return typeof candidate === "string" ? candidate : undefined;
+}
 
-    const performedActions: AgentAction[] = [];
-    const generatedArtifacts: string[] = [];
+function resolveSourceId(
+  eventId: string,
+  payload: Record<string, unknown>
+): string {
+  const sourceId =
+    payload.escrowId ??
+    payload.transactionId ??
+    payload.proofId ??
+    payload.settlementId ??
+    eventId;
 
-    // Mocking score calculation
-    let scoreDelta = 0;
-    let actionType = '';
-    let reason = '';
+  return String(sourceId);
+}
 
-    if (requiredAction === 'process_success') {
-      scoreDelta = 10;
-      actionType = 'recalculate_score';
-      reason = 'SLA met and settlement completed successfully.';
-    } else if (requiredAction === 'process_dispute' || requiredAction === 'process_sla_failure') {
-      scoreDelta = -20;
-      actionType = 'register_strike';
-      reason = 'Dispute opened or SLA failed.';
-      
-      performedActions.push({
-        actionId: `act_${Date.now()}_alert`,
-        agentId: trustReputationAgentConfig.id,
-        type: 'emit_risk_alert',
-        payload: { agentId, riskLevel: 'medium', reason },
-        status: 'success'
-      });
-      generatedArtifacts.push('RISK_ALERT_EVENT');
-    } else if (requiredAction === 'process_slash') {
-      scoreDelta = -50;
-      actionType = 'register_strike';
-      reason = 'On-chain slashing occurred.';
-      
-      performedActions.push({
-        actionId: `act_${Date.now()}_alert`,
-        agentId: trustReputationAgentConfig.id,
-        type: 'emit_risk_alert',
-        payload: { agentId, riskLevel: 'high', reason },
-        status: 'success'
-      });
-      generatedArtifacts.push('CRITICAL_RISK_ALERT_EVENT');
-    }
+export async function runTrustReputationAgent(
+  event: TrustRotaEvent
+): Promise<TrustAgentResult> {
+  const trigger = trustReputationTriggers[event.type as TrustReputationTrigger];
 
-    performedActions.push({
-      actionId: `act_${Date.now()}_score`,
-      agentId: trustReputationAgentConfig.id,
-      type: actionType,
-      payload: { 
-        agentId, 
-        delta: scoreDelta, 
-        eventId: event.eventId,
-        evidence: reason
-      },
-      status: 'success'
-    });
-
-    performedActions.push({
-      actionId: `act_${Date.now()}_history`,
-      agentId: trustReputationAgentConfig.id,
-      type: 'update_trust_history',
-      payload: { agentId, eventId: event.eventId, eventType: event.type },
-      status: 'success'
-    });
-
-    generatedArtifacts.push('TRUST_HISTORY_UPDATED');
-
-    logger.info(event.eventId, requiredAction, 'Reputação processada com sucesso', { scoreDelta, agentId });
-
+  if (!trigger) {
     return {
-      success: true,
-      actionsPerformed: performedActions,
-      generatedArtifacts,
-      reason: 'Reputation and trust history updated successfully.'
-    };
-    
-  } catch (error: any) {
-    logger.error(event.eventId, 'execution_error', error.message);
-    return {
-      success: false,
-      actionsPerformed: [],
-      generatedArtifacts: [],
-      error: error.message,
-      reason: 'Erro interno durante processamento de reputação.'
+      status: "SKIPPED",
+      decision: "unsupported_event_for_trust_agent",
+      notes: [`Event ${event.type} is not handled by trust-reputation-agent`],
     };
   }
+
+  const targetAgentId = resolveTargetAgentId(event.payload);
+  if (!targetAgentId) {
+    return {
+      status: "FAILED",
+      decision: "missing_target_agent_id",
+      notes: ["No seller/provider/agent id found in payload"],
+    };
+  }
+
+  return {
+    status: "COMPLETED",
+    decision: "apply_reputation_signal",
+    signal: trigger.signal,
+    targetAgentId,
+    sourceId: resolveSourceId(event.eventId, event.payload),
+    evidence: {
+      eventType: event.type,
+      source: event.source,
+      timestamp: event.timestamp,
+      payload: event.payload,
+    },
+    notes: [trigger.description],
+  };
 }

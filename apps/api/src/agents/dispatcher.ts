@@ -3,14 +3,21 @@ import { ExecutionLogService } from '../execution-logs/execution-log.service';
 import { runRouter } from '@rota/agents/router-agent/run';
 import { runDistributionAgent } from '@rota/agents/github-distribution-agent/run';
 import { runSkillPublisherAgent } from '@rota/agents/skill-publisher-agent/run';
+import { runTrustReputationAgent } from '@rota/agents/trust-reputation-agent/run';
+import { ReputationService } from '../reputation/reputation.service';
 import { RotaEvent } from '@rota/shared-types';
-import { WorkforceAgentKind, ExecutionStatus, EventSource } from '@prisma/client';
+import { WorkforceAgentKind, ExecutionStatus, EventSource, PrismaClient } from '@prisma/client';
 
 export class AgentDispatcher {
+  private reputationService: ReputationService;
+
   constructor(
     private eventBus: RotaEventBus,
-    private logService: ExecutionLogService
-  ) {}
+    private logService: ExecutionLogService,
+    prisma: PrismaClient
+  ) {
+    this.reputationService = new ReputationService(prisma);
+  }
 
   /**
    * Conecta o Event Bus ao Workforce Agentic.
@@ -97,6 +104,48 @@ export class AgentDispatcher {
               output: { artifacts: pubResult.artifacts, actions: pubResult.actionsPerformed },
               error: pubResult.error ? { message: pubResult.error } : undefined,
               latencyMs: pubLatency,
+            });
+          } catch(e) {
+             // ignore DB
+          }
+        } else if (result.targetAgent === 'trust-reputation-agent') {
+          console.log(`[AgentDispatcher] Executing Trust & Reputation Agent for event ${domainEvent.eventId}`);
+          const trustStartTime = Date.now();
+
+          const trustResult = await runTrustReputationAgent(rotaEvent);
+
+          if (
+            trustResult.status === "COMPLETED" &&
+            trustResult.signal &&
+            trustResult.targetAgentId &&
+            trustResult.sourceId
+          ) {
+            try {
+              await this.reputationService.applySignal({
+                agentId: trustResult.targetAgentId,
+                signal: trustResult.signal,
+                sourceId: trustResult.sourceId,
+                evidence: trustResult.evidence ?? null,
+              });
+              console.log(`[AgentDispatcher] Reputation signal applied successfully: ${trustResult.signal} to agent ${trustResult.targetAgentId}`);
+            } catch (e: any) {
+              console.error(`[AgentDispatcher] Failed to apply reputation signal: ${e.message}`);
+            }
+          }
+
+          const trustLatency = Date.now() - trustStartTime;
+
+          try {
+            await this.logService.logExecution({
+              agent: 'TRUST_REPUTATION' as WorkforceAgentKind,
+              eventId: domainEvent.eventId,
+              source: domainEvent.source as EventSource,
+              eventType: domainEvent.type,
+              status: trustResult.status === 'COMPLETED' ? ('SUCCESS' as ExecutionStatus) : trustResult.status === 'SKIPPED' ? ('SKIPPED' as ExecutionStatus) : ('FAILED' as ExecutionStatus),
+              decision: trustResult.decision,
+              input: { payload: domainEvent.payload },
+              output: { trustResult },
+              latencyMs: trustLatency,
             });
           } catch(e) {
              // ignore DB
