@@ -1,0 +1,9 @@
+[package]
+name = "cargo_contract"
+version = "0.1.0"
+authors = ["DGuedz"]
+description = "ROTA escrow smart contract"
+license = "MIT"
+
+[dependencies]
+soroban-sdk = "0.8.0"
