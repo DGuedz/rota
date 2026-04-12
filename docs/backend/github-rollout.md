@@ -13,11 +13,11 @@ Este documento descreve os passos seguros para desativar o modo `dryRun` e permi
 - [ ] Manter `ROTA_GITHUB_DRY_RUN="true"`.
 - [ ] Enviar PR e verificar se o `AgentExecutionLog` no Postgres capta a leitura de commits (`update_docs_surface`).
 
-## Fase 3: Primeira Ação de Escrita Parcial (Comentário em PR)
-- [ ] Em produção, abrir uma PR simples (ex: update de typo).
-- [ ] Mudar temporariamente no código: `dryRun = false` APENAS para `commentOnPullRequest` no `GitHubWriteService`.
-- [ ] Validar se o bot comentou na PR que a skill passou no lint.
-- [ ] Validar se o token não expôs permissões excessivas.
+## Fase 3: Primeira Ação de Escrita Parcial (Comentário em PR) (Status: ✅ Concluído / Pronto)
+- [x] O código foi ajustado com a flag `liveComments` via `ROTA_GITHUB_LIVE_COMMENTS`.
+- [x] Criado script de teste para validar o bypass de segurança (`scripts/test-live-comment.ts`).
+- [ ] O operador (você) deve rodar o script apontando um PR válido.
+- [ ] Validar se o bot comentou na PR e o guardrail de draft release continua ativo.
 
 ## Fase 4: Autonomia de Release Draft (Full Nível 2)
 - [ ] Ativar `ROTA_GITHUB_DRY_RUN="false"` no `.env` de produção.

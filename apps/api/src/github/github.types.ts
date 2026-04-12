@@ -20,4 +20,10 @@ export interface GitHubConfig {
    * O sistema apenas fará log da intenção. Padrão: true (Segurança by Default).
    */
   dryRun: boolean;
+  
+  /**
+   * Se true, permite especificamente a postagem real de comentários em PRs,
+   * mesmo se o dryRun global estiver ativado. Padrão: false.
+   */
+  liveComments: boolean;
 }

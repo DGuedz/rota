@@ -12,13 +12,20 @@ export class GitHubWriteService {
 
   /**
    * Helper interno para logar a intenção de escrita e abortar se em dryRun.
+   * Recebe um parâmetro isOverrideAllowed que permite bypassar o dryRun se
+   * uma política específica (como liveComments) estiver ativada.
    */
-  private checkGuardrails(actionName: string, metadata: any): boolean {
-    if (this.config.dryRun) {
+  private checkGuardrails(actionName: string, metadata: any, isOverrideAllowed: boolean = false): boolean {
+    if (this.config.dryRun && !isOverrideAllowed) {
       console.log(`[GitHubWriteService:GUARDRAIL] Action blocked by dryRun: ${actionName}`);
       console.log(`[GitHubWriteService:METADATA]`, JSON.stringify(metadata, null, 2));
       return false;
     }
+    
+    if (isOverrideAllowed && this.config.dryRun) {
+      console.log(`[GitHubWriteService:GUARDRAIL] Bypassing dryRun for explicitly allowed action: ${actionName}`);
+    }
+    
     return true;
   }
 
@@ -54,7 +61,7 @@ export class GitHubWriteService {
    * Ótimo para o distribution agent postar o DOCS_SYNC_REPORT ou resultados de validação.
    */
   async commentOnPullRequest(pullNumber: number, body: string) {
-    if (!this.checkGuardrails('commentOnPullRequest', { pullNumber })) {
+    if (!this.checkGuardrails('commentOnPullRequest', { pullNumber }, this.config.liveComments)) {
       return { success: true, simulated: true, action: 'commentOnPullRequest' };
     }
 
