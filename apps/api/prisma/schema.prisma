@@ -1,0 +1,365 @@
+generator client { 
+  provider = "prisma-client-js" 
+} 
+
+datasource db { 
+  provider = "postgresql" 
+  url      = env("DATABASE_URL") 
+} 
+
+enum AgentStatus { 
+  ACTIVE 
+  SUSPENDED 
+  BANNED 
+} 
+
+enum PriceMode { 
+  FIXED 
+  RFQ 
+  USAGE_TIERED 
+} 
+
+enum IntentStatus { 
+  DRAFT 
+  OPEN 
+  QUOTED 
+  SELECTED 
+  EXPIRED 
+  CANCELLED 
+  ESCROW_PENDING 
+  ESCROW_LOCKED 
+  EXECUTING 
+  PROOF_SUBMITTED 
+  SETTLED 
+  DISPUTED 
+  FAILED 
+} 
+
+enum RFQStatus { 
+  OPEN 
+  AWARDED 
+  CLOSED 
+  EXPIRED 
+  CANCELLED 
+} 
+
+enum BidStatus { 
+  SUBMITTED 
+  SELECTED 
+  REJECTED 
+  EXPIRED 
+  WITHDRAWN 
+} 
+
+enum EscrowStatus { 
+  PENDING_XDR 
+  LOCKED 
+  EXECUTING 
+  PROOF_SUBMITTED 
+  SETTLED 
+  DISPUTED 
+  SLASHED 
+  CANCELLED 
+  FAILED 
+} 
+
+enum ProofStatus { 
+  SUBMITTED 
+  ACCEPTED 
+  REJECTED 
+  DISPUTED 
+} 
+
+enum ReputationSourceType { 
+  SETTLEMENT 
+  SLA 
+  PROOF 
+  DISPUTE 
+  SLASH 
+  SYSTEM 
+  MANUAL 
+} 
+
+enum Severity { 
+  INFO 
+  WARNING 
+  CRITICAL 
+} 
+
+enum EventSource { 
+  GITHUB 
+  BACKEND 
+  PROTOCOL 
+  SETTLEMENT 
+  PAYMENTS 
+  MANUAL 
+  SCHEDULED 
+  AGENT 
+} 
+
+enum DomainEventStatus { 
+  PENDING 
+  PROCESSING 
+  PROCESSED 
+  FAILED 
+  DEAD_LETTER 
+} 
+
+enum WorkforceAgentKind { 
+  ROUTER 
+  GITHUB_DISTRIBUTION 
+  SKILL_PUBLISHER 
+  PROTOCOL_WATCHER 
+  TRUST_REPUTATION 
+} 
+
+enum ExecutionStatus { 
+  RECEIVED 
+  DISPATCHED 
+  COMPLETED 
+  SKIPPED 
+  BLOCKED 
+  FAILED 
+} 
+
+model Agent { 
+  id               String      @id @default(cuid()) 
+  walletAddress    String      @unique 
+  displayName      String? 
+  status           AgentStatus @default(ACTIVE) 
+  reputationScore  Int         @default(0) 
+  totalExecutions  Int         @default(0) 
+  totalSuccesses   Int         @default(0) 
+  totalDisputes    Int         @default(0) 
+  totalStrikes     Int         @default(0) 
+  metadata         Json? 
+  createdAt        DateTime    @default(now()) 
+  updatedAt        DateTime    @updatedAt 
+
+  skills               Skill[] 
+  intents              Intent[]             @relation("BuyerIntents") 
+  rfqs                 RFQ[]                @relation("BuyerRfqs") 
+  bids                 Bid[]                @relation("SellerBids") 
+  escrowsAsBuyer       EscrowTransaction[]  @relation("BuyerEscrows") 
+  escrowsAsSeller      EscrowTransaction[]  @relation("SellerEscrows") 
+  proofSubmissions     ProofSubmission[]    @relation("SellerProofs") 
+  reputationEvents     ReputationEvent[] 
+
+  @@index([status, reputationScore]) 
+} 
+
+model Skill { 
+  id                  String    @id @default(cuid()) 
+  agentId             String 
+  slug                String    @unique 
+  name                String 
+  description         String 
+  category            String 
+  endpointUrl         String? 
+  priceMode           PriceMode @default(RFQ) 
+  priceConfig         Json 
+  requiredBond        Decimal   @db.Decimal(20, 7) 
+  reputationThreshold Int       @default(0) 
+  slaSeconds          Int 
+  isActive            Boolean   @default(true) 
+  metadata            Json? 
+  createdAt           DateTime  @default(now()) 
+  updatedAt           DateTime  @updatedAt 
+
+  agent   Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade) 
+  intents Intent[] 
+  bids    Bid[] 
+
+  @@index([agentId, isActive]) 
+  @@index([category, isActive]) 
+} 
+
+model Intent { 
+  id                   String       @id @default(cuid()) 
+  buyerAgentId         String 
+  skillId              String? 
+  title                String 
+  description          String? 
+  maxPrice             Decimal?     @db.Decimal(20, 7) 
+  preferredAssetCode   String       @default("USDC") 
+  preferredAssetIssuer String? 
+  requiredBond         Decimal?     @db.Decimal(20, 7) 
+  minReputation        Int          @default(0) 
+  deadlineAt           DateTime? 
+  validationCriteria   Json? 
+  status               IntentStatus @default(OPEN) 
+  selectedBidId        String?      @unique 
+  createdAt            DateTime     @default(now()) 
+  updatedAt            DateTime     @updatedAt 
+
+  buyerAgent  Agent              @relation("BuyerIntents", fields: [buyerAgentId], references: [id], onDelete: Restrict) 
+  skill       Skill?             @relation(fields: [skillId], references: [id], onDelete: SetNull) 
+  rfq         RFQ? 
+  selectedBid Bid?               @relation("SelectedBid", fields: [selectedBidId], references: [id]) 
+  escrow      EscrowTransaction? 
+  proofs      ProofSubmission[] 
+
+  @@index([buyerAgentId, status]) 
+  @@index([skillId, status]) 
+  @@index([deadlineAt]) 
+} 
+
+model RFQ { 
+  id               String    @id @default(cuid()) 
+  intentId         String    @unique 
+  buyerAgentId     String 
+  status           RFQStatus @default(OPEN) 
+  broadcastPayload Json? 
+  openedAt         DateTime  @default(now()) 
+  closesAt         DateTime? 
+  awardedBidId     String?   @unique 
+  createdAt        DateTime  @default(now()) 
+  updatedAt        DateTime  @updatedAt 
+
+  intent      Intent @relation(fields: [intentId], references: [id], onDelete: Cascade) 
+  buyerAgent  Agent  @relation("BuyerRfqs", fields: [buyerAgentId], references: [id], onDelete: Restrict) 
+  bids        Bid[] 
+  awardedBid  Bid?   @relation("AwardedBid", fields: [awardedBidId], references: [id]) 
+
+  @@index([buyerAgentId, status]) 
+  @@index([closesAt]) 
+} 
+
+model Bid { 
+  id             String    @id @default(cuid()) 
+  rfqId          String 
+  sellerAgentId  String 
+  skillId        String? 
+  price          Decimal   @db.Decimal(20, 7) 
+  bondAmount     Decimal   @db.Decimal(20, 7) 
+  slaSeconds     Int 
+  quotePayload   Json? 
+  status         BidStatus @default(SUBMITTED) 
+  createdAt      DateTime  @default(now()) 
+  updatedAt      DateTime  @updatedAt 
+
+  rfq              RFQ      @relation(fields: [rfqId], references: [id], onDelete: Cascade) 
+  sellerAgent      Agent    @relation("SellerBids", fields: [sellerAgentId], references: [id], onDelete: Restrict) 
+  skill            Skill?   @relation(fields: [skillId], references: [id], onDelete: SetNull) 
+  selectedForIntent Intent? @relation("SelectedBid") 
+  awardedForRfq     RFQ?    @relation("AwardedBid") 
+  escrow            EscrowTransaction? 
+  proofs            ProofSubmission[] 
+
+  @@index([rfqId, status]) 
+  @@index([sellerAgentId, status]) 
+} 
+
+model EscrowTransaction { 
+  id                String       @id @default(cuid()) 
+  intentId          String       @unique 
+  bidId             String       @unique 
+  buyerAgentId      String 
+  sellerAgentId     String 
+  assetCode         String       @default("USDC") 
+  assetIssuer       String? 
+  amount            Decimal      @db.Decimal(20, 7) 
+  bondAmount        Decimal      @db.Decimal(20, 7) 
+  status            EscrowStatus @default(PENDING_XDR) 
+  contractId        String? 
+  stellarLockTxHash String?      @unique 
+  stellarSettleTxHash String?    @unique 
+  stellarSlashTxHash String?     @unique 
+  xdrBase64         String? 
+  lockLedger        Int? 
+  settleLedger      Int? 
+  slashLedger       Int? 
+  metadata          Json? 
+  createdAt         DateTime     @default(now()) 
+  updatedAt         DateTime     @updatedAt 
+
+  intent        Intent            @relation(fields: [intentId], references: [id], onDelete: Cascade) 
+  bid           Bid               @relation(fields: [bidId], references: [id], onDelete: Restrict) 
+  buyerAgent    Agent             @relation("BuyerEscrows", fields: [buyerAgentId], references: [id], onDelete: Restrict) 
+  sellerAgent   Agent             @relation("SellerEscrows", fields: [sellerAgentId], references: [id], onDelete: Restrict) 
+  proofSubmissions ProofSubmission[] 
+
+  @@index([status, createdAt]) 
+  @@index([buyerAgentId, sellerAgentId]) 
+} 
+
+model ProofSubmission { 
+  id                  String      @id @default(cuid()) 
+  intentId            String 
+  bidId               String 
+  escrowTransactionId String 
+  sellerAgentId       String 
+  proofHash           String 
+  resultUri           String? 
+  outputSchemaVersion String? 
+  metadata            Json? 
+  status              ProofStatus @default(SUBMITTED) 
+  submittedAt         DateTime    @default(now()) 
+  validatedAt         DateTime? 
+  validatorReason     String? 
+
+  intent            Intent            @relation(fields: [intentId], references: [id], onDelete: Cascade) 
+  bid               Bid               @relation(fields: [bidId], references: [id], onDelete: Restrict) 
+  escrowTransaction EscrowTransaction @relation(fields: [escrowTransactionId], references: [id], onDelete: Cascade) 
+  sellerAgent       Agent             @relation("SellerProofs", fields: [sellerAgentId], references: [id], onDelete: Restrict) 
+
+  @@index([escrowTransactionId, status]) 
+  @@index([sellerAgentId, submittedAt]) 
+  @@index([proofHash]) 
+} 
+
+model ReputationEvent { 
+  id            String               @id @default(cuid()) 
+  agentId       String 
+  sourceType    ReputationSourceType 
+  sourceId      String 
+  delta         Int 
+  severity      Severity             @default(INFO) 
+  reason        String 
+  evidence      Json? 
+  previousScore Int 
+  newScore      Int 
+  createdAt     DateTime             @default(now()) 
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade) 
+
+  @@index([agentId, createdAt]) 
+  @@index([sourceType, sourceId]) 
+} 
+
+model DomainEvent { 
+  id            String            @id @default(cuid()) 
+  eventId       String            @unique 
+  source        EventSource 
+  type          String 
+  payload       Json 
+  status        DomainEventStatus @default(PENDING) 
+  correlationId String? 
+  causationId   String? 
+  retryCount    Int               @default(0) 
+  lastError     String? 
+  receivedAt    DateTime          @default(now()) 
+  processedAt   DateTime? 
+
+  @@index([status, receivedAt]) 
+  @@index([source, type]) 
+} 
+
+model AgentExecutionLog { 
+  id             String            @id @default(cuid()) 
+  workforceAgent WorkforceAgentKind 
+  eventId        String 
+  source         EventSource 
+  eventType      String 
+  status         ExecutionStatus 
+  decision       String? 
+  input          Json? 
+  output         Json? 
+  error          Json? 
+  latencyMs      Int? 
+  createdAt      DateTime          @default(now()) 
+
+  @@index([workforceAgent, createdAt]) 
+  @@index([eventId]) 
+  @@index([status, createdAt]) 
+}

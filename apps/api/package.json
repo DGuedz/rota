@@ -1,0 +1,27 @@
+{
+  "name": "@rota/api",
+  "version": "1.0.0",
+  "description": "ROTA Core Backend API",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.7.0",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.24.3",
+    "ioredis": "^5.3.2",
+    "@rota/shared-types": "file:../../packages/shared-types",
+    "@rota/agents": "file:../../packages/agents"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.4",
+    "prisma": "^5.7.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
+  }
+}

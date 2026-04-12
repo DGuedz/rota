@@ -1,0 +1,28 @@
+{
+  "name": "rota-monorepo",
+  "version": "1.0.0",
+  "description": "ROTA — Routing Onchain Transactions for Agents",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "dev:api": "npm run dev --workspace=@rota/api",
+    "db:up": "docker-compose up -d db redis"
+  },
+  "keywords": [
+    "rota",
+    "stellar",
+    "agents",
+    "soroban"
+  ],
+  "author": "ROTA Team",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  }
+}

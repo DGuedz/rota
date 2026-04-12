@@ -1,0 +1,10 @@
+{
+  "name": "@rota/shared-types",
+  "version": "1.0.0",
+  "description": "Shared types and definitions for ROTA agents and core services",
+  "main": "src/index.ts",
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
