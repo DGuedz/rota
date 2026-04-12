@@ -25,7 +25,7 @@ export class RotaEventBus {
     causationId?: string
   ) {
     try {
-      // 1. Grava no banco
+      // 1. Grava no banco (ou mock)
       const domainEvent = await this.eventService.createEvent(
         source,
         type,
@@ -34,8 +34,17 @@ export class RotaEventBus {
         causationId
       );
 
+      // Mapeia para RotaEvent format se necessário (Dispatcher espera RotaEvent.id e etc)
+      const mappedEvent = {
+        id: domainEvent.eventId,
+        type: domainEvent.type,
+        source: domainEvent.source,
+        payload: domainEvent.payload,
+        timestamp: new Date().toISOString()
+      };
+
       // 2. Emite internamente (Fire and forget na perspectiva do emissor)
-      this.emitter.emit('rota_event', domainEvent);
+      this.emitter.emit('rota_event', mappedEvent);
       
       return domainEvent.eventId;
     } catch (error) {
@@ -51,26 +60,26 @@ export class RotaEventBus {
   subscribe(handler: (event: any) => Promise<void>) {
     this.emitter.on('rota_event', async (domainEvent) => {
       try {
-        if (domainEvent.eventId) {
+        if (domainEvent.id) { // Fix mapped event
           try {
-            await this.eventService.updateStatus(domainEvent.eventId, 'PROCESSING' as DomainEventStatus);
+            await this.eventService.updateStatus(domainEvent.id, 'PROCESSING' as DomainEventStatus);
           } catch (e) {
             // Ignore if DB is not available for this update in test mode
           }
         }
         await handler(domainEvent);
-        if (domainEvent.eventId) {
+        if (domainEvent.id) {
           try {
-            await this.eventService.updateStatus(domainEvent.eventId, 'PROCESSED' as DomainEventStatus);
+            await this.eventService.updateStatus(domainEvent.id, 'PROCESSED' as DomainEventStatus);
           } catch (e) {
             // Ignore if DB is not available for this update in test mode
           }
         }
       } catch (error: any) {
-        console.error(`[EventBus] Error handling event ${domainEvent.eventId}:`, error.message);
-        if (domainEvent.eventId) {
+        console.error(`[EventBus] Error handling event ${domainEvent.id}:`, error.message);
+        if (domainEvent.id) {
           try {
-            await this.eventService.updateStatus(domainEvent.eventId, 'FAILED' as DomainEventStatus, error.message);
+            await this.eventService.updateStatus(domainEvent.id, 'FAILED' as DomainEventStatus, error.message);
           } catch (e) {
             // Ignore
           }

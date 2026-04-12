@@ -2,6 +2,7 @@ import { RotaEventBus } from '../events/event-bus';
 import { ExecutionLogService } from '../execution-logs/execution-log.service';
 import { runRouter } from '@rota/agents/router-agent/run';
 import { runDistributionAgent } from '@rota/agents/github-distribution-agent/run';
+import { runSkillPublisherAgent } from '@rota/agents/skill-publisher-agent/run';
 import { RotaEvent } from '@rota/shared-types';
 import { WorkforceAgentKind, ExecutionStatus, EventSource } from '@prisma/client';
 
@@ -25,7 +26,7 @@ export class AgentDispatcher {
         source: domainEvent.source as any,
         type: domainEvent.type as any,
         payload: domainEvent.payload as any,
-        timestamp: domainEvent.receivedAt.toISOString()
+        timestamp: domainEvent.receivedAt ? domainEvent.receivedAt.toISOString() : new Date().toISOString()
       };
 
       try {
@@ -76,6 +77,32 @@ export class AgentDispatcher {
           } catch(e) {
              // ignore DB
           }
+        } else if (result.targetAgent === 'skill-publisher-agent') {
+          console.log(`[AgentDispatcher] Executing Skill Publisher Agent for event ${domainEvent.eventId}`);
+          const pubStartTime = Date.now();
+          
+          const pubResult = await runSkillPublisherAgent(rotaEvent);
+          
+          const pubLatency = Date.now() - pubStartTime;
+          
+          try {
+            await this.logService.logExecution({
+              agent: 'SKILL_PUBLISHER' as WorkforceAgentKind,
+              eventId: domainEvent.eventId,
+              source: domainEvent.source as EventSource,
+              eventType: domainEvent.type,
+              status: pubResult.success ? ('SUCCESS' as ExecutionStatus) : ('FAILED' as ExecutionStatus),
+              decision: pubResult.reason,
+              input: { payload: domainEvent.payload },
+              output: { artifacts: pubResult.artifacts, actions: pubResult.actionsPerformed },
+              error: pubResult.error ? { message: pubResult.error } : undefined,
+              latencyMs: pubLatency,
+            });
+          } catch(e) {
+             // ignore DB
+          }
+        } else if (result.targetAgent) {
+          console.warn(`[Dispatcher] ⚠️ No runtime handler for destination agent: ${result.targetAgent}`);
         }
         // Outros agentes podem ser adicionados aqui futuramente.
 

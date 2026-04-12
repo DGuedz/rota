@@ -41,5 +41,16 @@ export const supportedTriggers: TriggerDefinition[] = [
 ];
 
 export function resolveTrigger(event: RotaEvent): TriggerDefinition | undefined {
+  // Triggers do Skill Publisher Agent
+  if (event.type.startsWith('skill.publish_requested') || event.type.startsWith('repo.skill_candidate')) {
+    return {
+      eventName: event.type,
+      source: event.source,
+      targetAgent: 'skill-publisher-agent',
+      debounceMs: 0,
+      retryStrategy: 'drop'
+    };
+  }
+
   return supportedTriggers.find(t => t.eventName === event.type && t.source === event.source);
 }

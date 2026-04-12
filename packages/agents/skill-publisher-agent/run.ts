@@ -3,104 +3,95 @@ import { StructuredLogger } from '../shared/structured-logger';
 import { getRequiredAction } from './triggers';
 import { publisherPolicies } from './policies';
 import { skillPublisherAgentConfig } from './agent.config';
+import { PublishService } from './publish.service';
 
 const logger = new StructuredLogger(skillPublisherAgentConfig.id);
 
-export async function runPublisherAgent(event: RotaEvent): Promise<ExecutionResult> {
-  logger.info(event.eventId, 'receive_event', `Iniciando empacotamento da skill: ${event.type}`);
+export async function runSkillPublisherAgent(event: RotaEvent): Promise<ExecutionResult> {
+  logger.info(`Received event: ${event.type}`, { eventId: event.id });
+
+  const requiredAction = getRequiredAction(event);
   
+  if (!requiredAction) {
+    logger.warn(`No action mapped for event type: ${event.type}`);
+    return {
+      success: false,
+      reason: `Unhandled event type for publisher agent: ${event.type}`,
+      actionsPerformed: [],
+      generatedArtifacts: []
+    };
+  }
+
+  const policyDecision = publisherPolicies.validateAction(requiredAction);
+  if (!policyDecision.allowed) {
+    logger.error(`Action blocked by policy: ${requiredAction}`, { reason: policyDecision.reason });
+    return {
+      success: false,
+      reason: `Policy violation: ${policyDecision.reason}`,
+      actionsPerformed: [],
+      generatedArtifacts: []
+    };
+  }
+
+  const performedActions: AgentAction[] = [];
+  const generatedArtifacts: string[] = [];
+
   try {
-    const requiredAction = getRequiredAction(event);
-    if (!requiredAction) {
-      return {
-        success: false,
-        actionsPerformed: [],
-        generatedArtifacts: [],
-        reason: 'Evento não requer ação de empacotamento.'
-      };
+    switch (requiredAction) {
+      case 'validate_skill_candidate':
+        const isValid = publisherPolicies.hasMinimumManifest(event.payload.metadata);
+        performedActions.push({
+          actionId: `pub_${Date.now()}`,
+          agentId: skillPublisherAgentConfig.id,
+          type: 'validate_skill_candidate',
+          targetPath: `skills/candidate/${event.payload.id || 'unknown'}`,
+          payload: { valid: isValid },
+          status: 'success'
+        });
+        generatedArtifacts.push(isValid ? 'CANDIDATE_APPROVED' : 'CANDIDATE_REJECTED');
+        break;
+
+      case 'generate_skill_package':
+        // Geração determinística via PublishService
+        const pubSvcResult = PublishService.generateSkillPackage(event.payload as any);
+        
+        if (!pubSvcResult.success) {
+          throw new Error(`Package generation failed: ${pubSvcResult.errors?.join(', ')}`);
+        }
+
+        performedActions.push({
+          actionId: `pub_${Date.now()}`,
+          agentId: skillPublisherAgentConfig.id,
+          type: 'generate_skill_package',
+          targetPath: `skills/${event.payload.id}`,
+          payload: { generated: true, files: pubSvcResult.generatedPaths },
+          status: policyDecision.requiresHumanApproval ? 'requires_approval' : 'success'
+        });
+        generatedArtifacts.push('SKILL_PACKAGE_SCAFFOLDED');
+        break;
+
+      default:
+        throw new Error(`Unhandled action in runtime: ${requiredAction}`);
     }
 
-    const policyDecision = publisherPolicies.validateAction('create_skill_md');
-    if (!policyDecision.allowed) {
-      logger.warn(event.eventId, 'create_skill_md', policyDecision.reason);
-      return {
-        success: false,
-        actionsPerformed: [],
-        generatedArtifacts: [],
-        reason: policyDecision.reason
-      };
-    }
-
-    const skillName = event.payload.skillName || `new-skill-${Date.now()}`;
-    const basePath = `/skills/${skillName}`;
-    
-    const performedActions: AgentAction[] = [];
-    const generatedArtifacts: string[] = [];
-
-    if (requiredAction === 'package_skill') {
-      // 1. Validar requisitos
-      if (!publisherPolicies.validateSkillPackage(event.payload)) {
-        logger.error(event.eventId, 'package_skill', 'Faltam metadados obrigatórios (comando ou schemas) para publicar a skill.');
-        return {
-          success: false,
-          actionsPerformed: [],
-          generatedArtifacts: [],
-          reason: 'Validation failed: Missing mandatory metadata for skill publication.'
-        };
-      }
-
-      // 2. Gerar skill.md
-      performedActions.push({
-        actionId: `act_${Date.now()}_1`,
-        agentId: skillPublisherAgentConfig.id,
-        type: 'create_skill_md',
-        targetPath: `${basePath}/skill.md`,
-        payload: { content: 'Draft skill manifest generated.' },
-        status: 'success'
-      });
-      generatedArtifacts.push(`${basePath}/skill.md`);
-
-      // 3. Gerar schema.json
-      performedActions.push({
-        actionId: `act_${Date.now()}_2`,
-        agentId: skillPublisherAgentConfig.id,
-        type: 'create_schema_json',
-        targetPath: `${basePath}/schema.json`,
-        payload: { content: 'Draft schema JSON generated.' },
-        status: 'success'
-      });
-      generatedArtifacts.push(`${basePath}/schema.json`);
-
-      // 4. Propor pricing (Requer aprovação)
-      const pricingDecision = publisherPolicies.validateAction('create_pricing_md');
-      performedActions.push({
-        actionId: `act_${Date.now()}_3`,
-        agentId: skillPublisherAgentConfig.id,
-        type: 'create_pricing_md',
-        targetPath: `${basePath}/pricing.md`,
-        payload: { content: 'Placeholder for pricing model.' },
-        status: pricingDecision.requiresHumanApproval ? 'requires_approval' : 'success'
-      });
-      generatedArtifacts.push(`${basePath}/pricing.md`);
-    }
-
-    logger.info(event.eventId, requiredAction, 'Skill empacotada com sucesso', { artifacts: generatedArtifacts });
+    logger.info(`Agent execution completed successfully`, { generatedArtifacts });
 
     return {
       success: true,
+      reason: 'Agent execution completed successfully',
       actionsPerformed: performedActions,
-      generatedArtifacts,
-      reason: 'Skill packaged successfully.'
+      generatedArtifacts: generatedArtifacts,
+      artifacts: generatedArtifacts
     };
-    
+
   } catch (error: any) {
-    logger.error(event.eventId, 'execution_error', error.message);
+    logger.error(`Execution failed: ${error.message}`, { error });
     return {
       success: false,
-      actionsPerformed: [],
-      generatedArtifacts: [],
-      error: error.message,
-      reason: 'Erro interno durante empacotamento.'
+      reason: `Execution failed: ${error.message}`,
+      actionsPerformed: performedActions,
+      generatedArtifacts: generatedArtifacts,
+      error: error.message
     };
   }
 }

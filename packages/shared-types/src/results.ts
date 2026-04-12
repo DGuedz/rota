@@ -23,4 +23,5 @@ export interface ExecutionResult {
   generatedArtifacts: string[];
   error?: string;
   reason: string;
+  artifacts?: string[];
 }
