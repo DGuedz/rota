@@ -6,11 +6,12 @@ export const githubDistributionAgentConfig: AgentConfig = {
   mission: 'Transformar mudanças do repositório em ativos públicos de distribuição (release notes, docs, changelog).',
   autonomyLevel: 2, // Nível 2: Propõe
   allowedActions: [
-    'write_docs',
-    'update_changelog',
-    'generate_public_metadata',
-    'suggest_release_notes',
-    'validate_readme'
+    'read_repository_metadata',
+    'generate_release_draft',
+    'generate_changelog_entry',
+    'validate_skill_package',
+    'update_docs_surface',
+    'generate_docs_sync_report'
   ],
   forbiddenActions: [
     'modify_smart_contracts',
@@ -19,7 +20,11 @@ export const githubDistributionAgentConfig: AgentConfig = {
     'publish_without_manifest'
   ],
   ownedPaths: [
-    '/docs',
-    'CHANGELOG.md'
+    'README.md',
+    'CHANGELOG.md',
+    'docs/',
+    'skills/*/README.md',
+    'skills/*/skill.md',
+    'skills/*/pricing.md'
   ]
 };

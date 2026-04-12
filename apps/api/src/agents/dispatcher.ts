@@ -1,6 +1,7 @@
 import { RotaEventBus } from '../events/event-bus';
 import { ExecutionLogService } from '../execution-logs/execution-log.service';
 import { runRouter } from '@rota/agents/router-agent/run';
+import { runDistributionAgent } from '@rota/agents/github-distribution-agent/run';
 import { RotaEvent } from '@rota/shared-types';
 import { WorkforceAgentKind, ExecutionStatus, EventSource } from '@prisma/client';
 
@@ -46,9 +47,29 @@ export class AgentDispatcher {
           latencyMs: latency,
         });
 
-        // NOTA: Em um runtime completo, se targetAgent não for null, o Dispatcher
-        // agora enviaria o evento para a fila específica do agente de destino
-        // (ex: runDistributionAgent(rotaEvent) ou publicando no redis-queue desse agente).
+        // 4. Se o Router determinou um agente de destino, despacha para o respectivo runtime
+        if (result.targetAgent === 'github-distribution-agent') {
+          console.log(`[AgentDispatcher] Executing GitHub Distribution Agent for event ${domainEvent.eventId}`);
+          const distStartTime = Date.now();
+          
+          const distResult = await runDistributionAgent(rotaEvent);
+          
+          const distLatency = Date.now() - distStartTime;
+          
+          await this.logService.logExecution({
+            agent: 'DISTRIBUTION' as WorkforceAgentKind,
+            eventId: domainEvent.eventId,
+            source: domainEvent.source as EventSource,
+            eventType: domainEvent.type,
+            status: distResult.success ? ('SUCCESS' as ExecutionStatus) : ('FAILED' as ExecutionStatus),
+            decision: distResult.reason,
+            input: { payload: domainEvent.payload },
+            output: { artifacts: distResult.generatedArtifacts, actions: distResult.actionsPerformed },
+            error: distResult.error ? { message: distResult.error } : undefined,
+            latencyMs: distLatency,
+          });
+        }
+        // Outros agentes podem ser adicionados aqui futuramente.
 
       } catch (error: any) {
         const latency = Date.now() - startTime;

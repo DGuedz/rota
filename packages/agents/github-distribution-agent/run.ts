@@ -34,32 +34,63 @@ export async function runDistributionAgent(event: RotaEvent): Promise<ExecutionR
     const performedActions: AgentAction[] = [];
     const generatedArtifacts: string[] = [];
 
-    // Mocking execution logic based on trigger
-    if (requiredAction === 'generate_changelog') {
-      performedActions.push({
-        actionId: `act_${Date.now()}`,
-        agentId: githubDistributionAgentConfig.id,
-        type: 'update_changelog',
-        targetPath: 'CHANGELOG.md',
-        payload: { commitMsg: event.payload.message },
-        status: policyDecision.requiresHumanApproval ? 'requires_approval' : 'success'
-      });
-      generatedArtifacts.push('CHANGELOG_ENTRY');
-    } else if (requiredAction === 'validate_publish_checklist') {
-      const isValid = distributionPolicies.canPublishSkill(event.payload.metadata);
-      if (isValid) {
-        // Gera um evento downstream para o skill-publisher-agent (simulado)
-        generatedArtifacts.push('SKILL_PUBLISH_CHECKLIST_APPROVED');
-      } else {
-        generatedArtifacts.push('README_FIX_SUGGESTION');
-      }
-      performedActions.push({
-        actionId: `act_${Date.now()}`,
-        agentId: githubDistributionAgentConfig.id,
-        type: 'validate_readme',
-        payload: { valid: isValid },
-        status: 'success'
-      });
+    // Mocking execution logic based on required action
+    switch (requiredAction) {
+      case 'update_docs_surface':
+        performedActions.push({
+          actionId: `act_${Date.now()}`,
+          agentId: githubDistributionAgentConfig.id,
+          type: 'update_docs_surface',
+          targetPath: 'docs/',
+          payload: { commitSha: event.payload.commitSha },
+          status: policyDecision.requiresHumanApproval ? 'requires_approval' : 'success'
+        });
+        generatedArtifacts.push('DOCS_SYNC_REPORT');
+        break;
+
+      case 'generate_changelog_entry':
+        performedActions.push({
+          actionId: `act_${Date.now()}`,
+          agentId: githubDistributionAgentConfig.id,
+          type: 'generate_changelog_entry',
+          targetPath: 'CHANGELOG.md',
+          payload: { prTitle: event.payload.title, prUrl: event.payload.url },
+          status: policyDecision.requiresHumanApproval ? 'requires_approval' : 'success'
+        });
+        generatedArtifacts.push('CHANGELOG_ENTRY');
+        break;
+
+      case 'generate_release_draft':
+        performedActions.push({
+          actionId: `act_${Date.now()}`,
+          agentId: githubDistributionAgentConfig.id,
+          type: 'generate_release_draft',
+          targetPath: 'github_releases',
+          payload: { tag: event.payload.tag, notes: 'Auto-generated notes...' },
+          status: policyDecision.requiresHumanApproval ? 'requires_approval' : 'success'
+        });
+        generatedArtifacts.push('RELEASE_DRAFT');
+        break;
+
+      case 'validate_skill_package':
+        const isValid = distributionPolicies.canPublishSkill(event.payload.metadata);
+        performedActions.push({
+          actionId: `act_${Date.now()}`,
+          agentId: githubDistributionAgentConfig.id,
+          type: 'validate_skill_package',
+          targetPath: `skills/${event.payload.skillId}`,
+          payload: { valid: isValid, metadata: event.payload.metadata },
+          status: 'success'
+        });
+        if (isValid) {
+          generatedArtifacts.push('SKILL_PUBLISH_APPROVED');
+        } else {
+          generatedArtifacts.push('SKILL_README_FIX_SUGGESTION');
+        }
+        break;
+
+      default:
+        throw new Error(`Ação não implementada no runtime: ${requiredAction}`);
     }
 
     logger.info(event.eventId, requiredAction, 'Ação executada com sucesso', { artifacts: generatedArtifacts });

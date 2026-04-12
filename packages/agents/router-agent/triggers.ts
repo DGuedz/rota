@@ -19,10 +19,11 @@ export interface TriggerDefinition {
 // Mapa de Gatilhos: Relaciona um evento recebido ao agente correspondente
 export const supportedTriggers: TriggerDefinition[] = [
   // --- GitHub Distribution Agent ---
-  { eventName: 'github.push', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
-  { eventName: 'github.pr_merged', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
-  { eventName: 'github.release', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
-  { eventName: 'github.skill_folder_created', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
+  { eventName: 'repo.push_main', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
+  { eventName: 'repo.pr_merged', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
+  { eventName: 'repo.release_draft', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
+  { eventName: 'repo.skill_updated', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
+  { eventName: 'repo.docs_changed', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
   
   // --- Skill Publisher Agent ---
   { eventName: 'feature.ready', source: 'github', targetAgent: 'skill-publisher-agent', debounceMs: 0, retryStrategy: 'drop' },

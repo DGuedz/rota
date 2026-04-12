@@ -12,17 +12,26 @@ export const distributionPolicies = {
       };
     }
     
+    if (!githubDistributionAgentConfig.allowedActions.includes(action)) {
+      return {
+        allowed: false,
+        reason: `Ação não listada nas permitidas do Distribution Agent: ${action}`,
+        requiresHumanApproval: false,
+        action
+      };
+    }
+    
     return {
       allowed: true,
       reason: 'Ação permitida pelas guardrails base.',
-      requiresHumanApproval: action === 'update_changelog' || action === 'suggest_release_notes',
+      requiresHumanApproval: action === 'generate_release_draft' || action === 'update_docs_surface',
       action
     };
   },
   
   canPublishSkill(metadata: any): boolean {
     // Regra: Exige manifesto mínimo antes de publicar skill
-    if (!metadata || !metadata.description || !metadata.commandExample) {
+    if (!metadata || !metadata.description || !metadata.commandExample || !metadata.pricing) {
       return false;
     }
     return true;

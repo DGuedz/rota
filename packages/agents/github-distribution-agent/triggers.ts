@@ -2,15 +2,15 @@ import { RotaEvent, EventType } from '@rota/shared-types';
 
 export interface DistributionTrigger {
   eventType: EventType;
-  actionRequired: 'generate_changelog' | 'generate_release_notes' | 'normalize_docs' | 'validate_publish_checklist';
+  actionRequired: 'update_docs_surface' | 'generate_changelog_entry' | 'generate_release_draft' | 'validate_skill_package';
 }
 
 export const distributionTriggers: DistributionTrigger[] = [
-  { eventType: 'github.push', actionRequired: 'normalize_docs' },
-  { eventType: 'github.pr_merged', actionRequired: 'generate_changelog' },
-  { eventType: 'github.release', actionRequired: 'generate_release_notes' },
-  { eventType: 'github.skill_folder_created', actionRequired: 'validate_publish_checklist' },
-  { eventType: 'github.readme_changed', actionRequired: 'normalize_docs' }
+  { eventType: 'repo.push_main', actionRequired: 'update_docs_surface' },
+  { eventType: 'repo.pr_merged', actionRequired: 'generate_changelog_entry' },
+  { eventType: 'repo.release_draft', actionRequired: 'generate_release_draft' },
+  { eventType: 'repo.skill_updated', actionRequired: 'validate_skill_package' },
+  { eventType: 'repo.docs_changed', actionRequired: 'update_docs_surface' }
 ];
 
 export function getRequiredAction(event: RotaEvent): DistributionTrigger['actionRequired'] | null {
