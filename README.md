@@ -1,65 +1,97 @@
 <div align="center">
-  <h1>ROTA — Routing Onchain Transactions for Agents</h1>
-  <p><strong>The trusted routing layer where autonomous agents discover capabilities, negotiate conditions, and settle value with onchain proof.</strong></p>
+  <h1>ROTA</h1>
+  <p><strong>Routing Onchain Transactions for Agents</strong></p>
+  <p>The trusted routing layer where autonomous agents discover capabilities, negotiate conditions, and settle value with onchain proof.</p>
 </div>
 
+<br />
+
+## The Protocol
+
+Autonomous agents can communicate easily, but they lack a secure, native rail to **settle economic value** without fraud risk. ROTA provides the coordination infrastructure for agent-to-agent (A2A) commerce.
+
+ROTA is not a chatbot or a generic marketplace. It is an **Operating System for Agentic Commerce** that handles:
+- **Skill Discovery**: A catalog of standardized agentic capabilities.
+- **Private RFQ**: Request-for-Quote negotiation for complex intents.
+- **Onchain Escrow**: Value locked securely via Soroban Smart Contracts.
+- **Proof & Settlement**: Immutable cryptographic proofs mapped to reputation scores.
+- **Paid Execution (x402)**: Direct monetization for granular skills.
+
 ---
 
-## O Problema e a Solução
+## Core Architecture (Hybrid Trust)
 
-Hoje, agentes autônomos e IAs conseguem se comunicar, mas **não possuem uma via segura para liquidar valor sem risco de fraude**. Falta infraestrutura confiável para transações máquina-para-máquina (M2M).
+ROTA operates on a strict boundary between speed and trust:
 
-**A Solução:** A ROTA entra com infraestrutura de pagamentos (x402/MPP), **escrow** (garantia inteligente) e sistema de reputação. O valor é liquidado apenas quando a tarefa é comprovadamente executada.
+### Offchain (Speed & Coordination)
+- Intent routing and matching.
+- Skill catalog indexing.
+- SLA and policy validation.
+- Reputation aggregation.
+
+### Onchain (Trust & Settlement) via Stellar & Soroban
+- Escrow locking and bond deposits.
+- XDR generation and transaction anchoring.
+- Slashing and deterministic payouts.
 
 ---
 
-## Comandos de Execução Imediata (Integração)
+## Quickstart & Execution
 
-Como o agente não quer navegar, ele quer **executar**, a ROTA foi construída para uma integração de 5 minutos, seja via CLI ou SDK TypeScript (`@rota/sdk`).
+ROTA is built for agents. Execution is direct and programmable.
 
-### Via CLI
+### 1. Paid Execution (x402)
+Execute a skill directly by providing mathematical proof of payment.
 
 ```bash
-# 1. Publique a intenção de serviço
-rota intent publish --task "data-scraping" --reward 50 --asset USDC
-
-# 2. Financie o contrato de Escrow
-rota escrow fund --intent-id 1042 --amount 50
-
-# 3. Submeta a prova criptográfica de conclusão
-rota proof submit --intent-id 1042 --proof 0xabc123...
+curl -X POST https://api.rota.network/skills/wallet-risk-check/execute \
+  -H "Content-Type: application/json" \
+  -H "x-rota-payment-token: <X402_PAYMENT_PROOF>" \
+  -d '{"walletAddress": "GNEW123456789EXAMPLE"}'
 ```
 
-### Via TypeScript SDK (`@rota/sdk`)
+### 2. Escrow & Intent Flow
+For complex skills requiring skin in the game (Bond) and SLA validation.
 
-```typescript
-import { RotaClient } from '@rota/sdk';
+```bash
+# 1. Publish an Intent
+rota intent publish --skill rwa-intent-parser --max-price 50 --asset USDC
 
-const rota = new RotaClient({ network: 'testnet' });
+# 2. Lock Escrow (Buyer)
+rota escrow fund --intent-id <ID> --sign
 
-// Cria e financia um escrow para uma tarefa
-const escrow = await rota.escrow.create({
-  agentId: 'agent_0x99',
-  amount: 50,
-  asset: 'USDC',
-  condition: 'data_scraping_success'
-});
-
-console.log(`Escrow criado! ID: ${escrow.id}`);
+# 3. Submit Proof (Seller)
+rota proof submit --escrow-id <ID> --hash <RESULT_HASH>
 ```
 
 ---
 
-## SLA, Preço e Garantia (Bond)
+## Skill Spotlight: `wallet-risk-check`
 
-Na ROTA, a confiança on-chain funciona através de garantias (Skin in the Game):
+Our first natively monetized capability. It allows any agent to quickly assess the risk of an onchain counterparty before committing to a financial transaction.
 
-- **Depósito de Garantia (Bond):** Os agentes executores devem depositar uma garantia (ex: **20% do valor da tarefa**) que fica travada de forma segura no nosso smart contract em **Soroban**.
-- **Slashing (Penalização):** Se a tarefa falhar, violar o SLA ou apresentar prova inválida, o contrato aplica penalizações (slashing) automaticamente na garantia depositada.
-- **Recompensa e Reputação:** Em caso de sucesso, o agente recebe o pagamento, recupera a garantia e ganha reputação on-chain, habilitando-o para tarefas de maior valor no ecossistema.
+- **Mode**: `PAID_PER_EXECUTION`
+- **Price**: `0.01 USDC`
+- **Integration**: [View Package & Schema](./skills/wallet-risk-check/README.md)
 
 ---
 
-## Prova Imutável
+## Documentation
 
-Cada execução de skill ou serviço pela rede gera uma assinatura tecnológica **imutável**, o hash da transação ancorado publicamente e de forma auditável na rede **Stellar**. A confiança não é presumida, é criptograficamente provada.
+Explore the ROTA internal architecture and protocol rules:
+
+- [Architecture Overview](./docs/architecture/README.md)
+- [Backend & Domain Models](./docs/backend/domain_models.md)
+- [Soroban Bridge & Escrow](./docs/backend/backend-soroban-bridge.md)
+- [Contract Event Indexer](./docs/backend/contract-indexer.md)
+
+---
+
+## The GitHub Distribution Doctrine
+
+In ROTA, **GitHub is the funnel**. 
+This repository serves as the public surface for discovery. Every folder inside `/skills` is a product. Every commit that publishes a skill expands the protocol's GDP. Open repository, paid execution.
+
+---
+
+**Built on Stellar | Powered by Soroban**

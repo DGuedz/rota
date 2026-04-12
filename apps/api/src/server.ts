@@ -22,6 +22,7 @@ import { escrowRoutes } from './escrow/escrow.routes';
 import { x402Routes } from './payments/x402.routes';
 import { ContractEventsService } from './contracts/contract-events.service';
 import { ContractEventsIndexer } from './contracts/contract-events.indexer';
+import { metricsRoutes } from './accounting/metrics.routes';
 
 // Carregar variáveis de ambiente
 dotenv.config({ path: '../../.env' });
@@ -61,8 +62,9 @@ const contractIndexer = new ContractEventsIndexer(prisma, stellarClient, contrac
 // Registrar Rotas de Domínio
 app.register(intentRoutes, { prefix: '/intents', intentService });
 app.register(rfqRoutes, { prefix: '/rfq', rfqService, bidService });
-app.register(escrowRoutes, { prefix: '/escrow', escrowService });
-app.register(x402Routes, { prefix: '/payments' });
+  app.register(escrowRoutes, { prefix: '/escrow', escrowService });
+  app.register(x402Routes, { prefix: '/payments' });
+  app.register(metricsRoutes, { prefix: '/telemetry', prisma });
 
 // Conecta o Dispatcher ao barramento de eventos
 agentDispatcher.start();

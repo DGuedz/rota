@@ -2,9 +2,11 @@ import { FastifyInstance } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import { SkillMonetizationPolicy } from './skill-pricing.service';
 import { walletRiskCheckService } from './wallet-risk-check.service';
+import { AccountingService } from '../accounting/accounting.service';
 
 export async function skillRoutes(fastify: FastifyInstance, options: { prisma: PrismaClient }) {
   const { prisma } = options;
+  const accountingService = new AccountingService(prisma);
 
   /**
    * Catálogo Público de Skills (com filtros de monetização)
@@ -93,18 +95,51 @@ export async function skillRoutes(fastify: FastifyInstance, options: { prisma: P
     }
 
     // 4. Executa a Skill Mock (wallet-risk-check)
+    let executionLog;
     try {
       const inputPayload = request.body || {};
       
-      // Validação básica do Input (No futuro, o JSON Schema Validator cuidará disso)
+      // Validação básica do Input
       if (!inputPayload.walletAddress) {
         return reply.status(400).send({ error: 'Validation Error', message: 'walletAddress is required.' });
       }
 
+      // [Accounting] Cria o log inicial de execução
+      executionLog = await accountingService.logExecution({
+        skillId: id,
+        paymentMode: skill.priceMode as any,
+        paymentAssetCode: policy.assetCode,
+        amountCharged: policy.priceAmount,
+        requestPayload: inputPayload
+      }, 'INITIATED' as any); // Tipos ainda quebram sem prisma generate, forçando cast
+
+      const startTime = Date.now();
+
       // Executar a análise de risco (Wallet Risk Check)
       const executionResult = await walletRiskCheckService.execute(inputPayload as any);
 
-      // Logar a execução paga com sucesso (AgentExecutionLog fará isso)
+      const latencyMs = Date.now() - startTime;
+
+      // [Accounting] Se pagou via x402, captura a receita
+      if (policy.requiresX402 && policy.priceAmount) {
+        await accountingService.captureRevenue({
+          type: 'EXECUTION_CHARGED' as any,
+          skillId: id,
+          paymentExecutionLogId: executionLog.id,
+          grossAmount: policy.priceAmount,
+          assetCode: policy.assetCode,
+        });
+      }
+
+      // [Accounting] Finaliza o log com sucesso
+      await accountingService.updateExecutionStatus(
+        executionLog.id, 
+        'EXECUTED' as any, 
+        latencyMs, 
+        executionResult
+      );
+
+      // Logar a execução paga com sucesso no console
       fastify.log.info({
         event: 'skill.executed',
         skillId: id,
@@ -113,11 +148,22 @@ export async function skillRoutes(fastify: FastifyInstance, options: { prisma: P
 
       return reply.send({
         success: true,
-        executionId: 'exec_' + Date.now(),
+        executionId: executionLog.id,
         output: executionResult
       });
     } catch (err: any) {
       fastify.log.error(err);
+
+      // [Accounting] Registra a falha
+      if (executionLog) {
+        await accountingService.updateExecutionStatus(
+          executionLog.id, 
+          'FAILED' as any, 
+          undefined, 
+          { error: err.message }
+        );
+      }
+
       return reply.status(500).send({ error: 'Skill Execution Failed', message: err.message });
     }
   });
