@@ -14,6 +14,14 @@ import { RFQService } from './rfq/rfq.service';
 import { BidRepository } from './bids/bid.repository';
 import { BidService } from './bids/bid.service';
 import { rfqRoutes } from './rfq/rfq.routes';
+import { StellarClient } from './stellar/stellar.client';
+import { XDRBuilder } from './stellar/xdr-builder';
+import { EscrowRepository } from './escrow/escrow.repository';
+import { EscrowService } from './escrow/escrow.service';
+import { escrowRoutes } from './escrow/escrow.routes';
+import { x402Routes } from './payments/x402.routes';
+import { ContractEventsService } from './contracts/contract-events.service';
+import { ContractEventsIndexer } from './contracts/contract-events.indexer';
 
 // Carregar variáveis de ambiente
 dotenv.config({ path: '../../.env' });
@@ -40,9 +48,21 @@ const rfqService = new RFQService(rfqRepo, eventBus);
 const bidRepo = new BidRepository(prisma);
 const bidService = new BidService(bidRepo, eventBus);
 
+// Inicializando Soroban Bridge
+const stellarClient = new StellarClient();
+const xdrBuilder = new XDRBuilder(stellarClient);
+const escrowRepo = new EscrowRepository(prisma);
+const escrowService = new EscrowService(escrowRepo, xdrBuilder, stellarClient, eventBus);
+
+// Inicializando Indexer Onchain
+const contractEventsService = new ContractEventsService(prisma, eventBus);
+const contractIndexer = new ContractEventsIndexer(prisma, stellarClient, contractEventsService);
+
 // Registrar Rotas de Domínio
 app.register(intentRoutes, { prefix: '/intents', intentService });
 app.register(rfqRoutes, { prefix: '/rfq', rfqService, bidService });
+app.register(escrowRoutes, { prefix: '/escrow', escrowService });
+app.register(x402Routes, { prefix: '/payments' });
 
 // Conecta o Dispatcher ao barramento de eventos
 agentDispatcher.start();
@@ -113,6 +133,10 @@ const start = async () => {
     const host = process.env.HOST || '0.0.0.0';
     
     await app.listen({ port, host });
+    
+    // Inicia o polling do indexador da rede Soroban
+    contractIndexer.start();
+    
     app.log.info(`ROTA API Server listening on ${host}:${port}`);
     app.log.info(`Agent Runtime is active and listening for events.`);
   } catch (err) {

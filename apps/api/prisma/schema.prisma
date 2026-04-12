@@ -13,10 +13,11 @@ enum AgentStatus {
   BANNED 
 } 
 
-enum PriceMode { 
-  FIXED 
-  RFQ 
-  USAGE_TIERED 
+enum PriceMode {
+  FREE
+  PAID_PER_EXECUTION
+  RFQ
+  USAGE_TIERED
 } 
 
 enum IntentStatus { 
@@ -355,11 +356,23 @@ model AgentExecutionLog {
   decision       String? 
   input          Json? 
   output         Json? 
-  error          Json? 
-  latencyMs      Int? 
-  createdAt      DateTime          @default(now()) 
+  error          Json?
+  latencyMs      Int?
+  createdAt      DateTime          @default(now())
 
-  @@index([workforceAgent, createdAt]) 
-  @@index([eventId]) 
-  @@index([status, createdAt]) 
+  @@index([workforceAgent, createdAt])
+  @@index([eventId])
+  @@index([status, createdAt])
+}
+
+model ContractEventCheckpoint {
+  id            String   @id @default(cuid())
+  contractId    String
+  eventType     String?
+  lastLedger    Int
+  lastCursor    String?
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+
+  @@unique([contractId, eventType])
 }
