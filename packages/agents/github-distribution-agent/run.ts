@@ -4,7 +4,13 @@ import { getRequiredAction } from './triggers';
 import { distributionPolicies } from './policies';
 import { githubDistributionAgentConfig } from './agent.config';
 
+// Importa os novos serviços do GitHub
+import { GitHubReadService } from '../../../apps/api/src/github/github.read.service';
+import { GitHubWriteService } from '../../../apps/api/src/github/github.write.service';
+
 const logger = new StructuredLogger(githubDistributionAgentConfig.id);
+const githubReader = new GitHubReadService();
+const githubWriter = new GitHubWriteService();
 
 export async function runDistributionAgent(event: RotaEvent): Promise<ExecutionResult> {
   logger.info(event.eventId, 'receive_event', `Iniciando processamento de evento: ${event.type}`);
@@ -34,15 +40,25 @@ export async function runDistributionAgent(event: RotaEvent): Promise<ExecutionR
     const performedActions: AgentAction[] = [];
     const generatedArtifacts: string[] = [];
 
-    // Mocking execution logic based on required action
+    // Integramos a lógica com os serviços reais/dryRun do GitHub
     switch (requiredAction) {
       case 'update_docs_surface':
+        // Simulação de leitura de commit para ver os arquivos que mudaram
+        let filesChanged: any[] = [];
+        if (event.payload.commitSha) {
+          try {
+            filesChanged = await githubReader.listChangedFiles(event.payload.commitSha);
+          } catch(e) {
+            // Em dryRun ou se falhar leitura, segue o baile
+          }
+        }
+        
         performedActions.push({
           actionId: `act_${Date.now()}`,
           agentId: githubDistributionAgentConfig.id,
           type: 'update_docs_surface',
           targetPath: 'docs/',
-          payload: { commitSha: event.payload.commitSha },
+          payload: { commitSha: event.payload.commitSha, filesRead: filesChanged.length },
           status: policyDecision.requiresHumanApproval ? 'requires_approval' : 'success'
         });
         generatedArtifacts.push('DOCS_SYNC_REPORT');
@@ -61,12 +77,19 @@ export async function runDistributionAgent(event: RotaEvent): Promise<ExecutionR
         break;
 
       case 'generate_release_draft':
+        // AGORA USA A API REAL (mas com o guardrail global cuidando do dryRun)
+        const tag = event.payload.tag || `v${Date.now()}`;
+        const name = event.payload.name || `Auto-Release ${tag}`;
+        const body = event.payload.notes || `Generated notes for ${tag}`;
+        
+        const releaseRes = await githubWriter.createReleaseDraft(tag, name, body);
+
         performedActions.push({
           actionId: `act_${Date.now()}`,
           agentId: githubDistributionAgentConfig.id,
           type: 'generate_release_draft',
           targetPath: 'github_releases',
-          payload: { tag: event.payload.tag, notes: 'Auto-generated notes...' },
+          payload: { tag, notes: body, apiResult: releaseRes },
           status: policyDecision.requiresHumanApproval ? 'requires_approval' : 'success'
         });
         generatedArtifacts.push('RELEASE_DRAFT');
@@ -74,6 +97,16 @@ export async function runDistributionAgent(event: RotaEvent): Promise<ExecutionR
 
       case 'validate_skill_package':
         const isValid = distributionPolicies.canPublishSkill(event.payload.metadata);
+        
+        // Se temos um número de PR (ex: skill enviada por PR), podemos postar um comentário!
+        if (event.payload.pullNumber) {
+          const commentBody = isValid 
+            ? `✅ **SKILL_PUBLISH_APPROVED**: The skill \`${event.payload.skillId}\` meets all distribution requirements.` 
+            : `❌ **SKILL_README_FIX_SUGGESTION**: The skill \`${event.payload.skillId}\` is missing required manifest fields (description, commandExample, pricing).`;
+          
+          await githubWriter.commentOnPullRequest(event.payload.pullNumber, commentBody);
+        }
+
         performedActions.push({
           actionId: `act_${Date.now()}`,
           agentId: githubDistributionAgentConfig.id,
