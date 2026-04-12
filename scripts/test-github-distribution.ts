@@ -1,7 +1,7 @@
-import { RotaEventBus } from '../apps/api/src/events/event-bus';
-import { DomainEventService } from '../apps/api/src/events/domain-event.service';
-import { ExecutionLogService } from '../apps/api/src/execution-logs/execution-log.service';
-import { AgentDispatcher } from '../apps/api/src/agents/dispatcher';
+import { RotaEventBus } from '../apps/api/src/events/event-bus.js';
+import { DomainEventService } from '../apps/api/src/events/domain-event.service.js';
+import { ExecutionLogService } from '../apps/api/src/execution-logs/execution-log.service.js';
+import { AgentDispatcher } from '../apps/api/src/agents/dispatcher.js';
 import { PrismaClient } from '@prisma/client';
 
 async function testGitHubDistributionAgent() {
@@ -34,11 +34,8 @@ async function testGitHubDistributionAgent() {
     updatedAt: new Date()
   };
 
-  // Vamos disparar manualmente o evento simulando a inscrição
   // @ts-ignore
-  await Promise.all(
-    (eventBus as any).subscribers.map((callback: any) => callback(mockEvent))
-  );
+  eventBus.emitter.emit('rota_event', mockEvent);
   
   console.log('\nSimulando evento: repo.pr_merged (PR Merged)');
   
@@ -57,10 +54,76 @@ async function testGitHubDistributionAgent() {
   };
 
   // @ts-ignore
-  await Promise.all(
-    (eventBus as any).subscribers.map((callback: any) => callback(mockPrEvent))
-  );
+  eventBus.emitter.emit('rota_event', mockPrEvent);
 
+  console.log('\nSimulando evento: repo.release_draft (Release Draft Created)');
+  
+  const mockReleaseEvent: any = {
+    eventId: `evt_${Date.now() + 2}`,
+    source: 'github',
+    type: 'repo.release_draft',
+    payload: {
+      tag: 'v0.1.0',
+      name: 'Foundation Release'
+    },
+    receivedAt: new Date(),
+    status: 'PENDING',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+
+  // @ts-ignore
+  eventBus.emitter.emit('rota_event', mockReleaseEvent);
+
+  console.log('\nSimulando evento: repo.skill_updated (Skill Package Validation)');
+  
+  const mockSkillEvent: any = {
+    eventId: `evt_${Date.now() + 3}`,
+    source: 'github',
+    type: 'repo.skill_updated',
+    payload: {
+      skillId: 'wallet-risk-check',
+      metadata: {
+        description: 'Verifica o risco de uma carteira',
+        commandExample: 'rota exec wallet-risk-check <address>',
+        pricing: {
+          tier: 'PAID_PER_EXECUTION',
+          amount: '0.01',
+          asset: 'USDC'
+        }
+      }
+    },
+    receivedAt: new Date(),
+    status: 'PENDING',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+
+  // @ts-ignore
+  eventBus.emitter.emit('rota_event', mockSkillEvent);
+
+  console.log('\nSimulando evento: repo.docs_changed (Docs Sync Report)');
+  
+  const mockDocsEvent: any = {
+    eventId: `evt_${Date.now() + 4}`,
+    source: 'github',
+    type: 'repo.docs_changed',
+    payload: {
+      commitSha: 'a1b2c3d4e5f6',
+      message: 'docs: update architecture'
+    },
+    receivedAt: new Date(),
+    status: 'PENDING',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+
+  // @ts-ignore
+  eventBus.emitter.emit('rota_event', mockDocsEvent);
+
+  // Dar tempo para os handlers assíncronos terminarem
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  
   console.log('\n--- Teste concluído ---');
   process.exit(0);
 }

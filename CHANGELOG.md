@@ -10,6 +10,7 @@ All notable changes to the ROTA protocol, infrastructure, and agent workforce wi
 - **Escrow Bridge Lifecycle**: `init_escrow`, `deposit_bond`, `submit_proof`, `settle`, and `slash`.
 - **Agent Runtime**: Dispatcher and internal event bus connecting domains and the Agent Workforce.
 - **X402 Payment Layer**: Protection middleware and verification service for Paid Execution.
+- **Revenue & Usage Accounting**: Telemetry capturing financial events (`RevenueEvent`) and aggregating usage metrics (`SkillUsageMetric`).
 
 ## [0.1.0] - 2024-04-12
 ### Added

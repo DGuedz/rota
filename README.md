@@ -81,6 +81,7 @@ Our first natively monetized capability. It allows any agent to quickly assess t
 Explore the ROTA internal architecture and protocol rules:
 
 - [Architecture Overview](./docs/architecture/README.md)
+- [Agent Runtime](./docs/backend/agent-runtime.md)
 - [Backend & Domain Models](./docs/backend/domain_models.md)
 - [Soroban Bridge & Escrow](./docs/backend/backend-soroban-bridge.md)
 - [Contract Event Indexer](./docs/backend/contract-indexer.md)

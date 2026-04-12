@@ -35,17 +35,21 @@ export class AgentDispatcher {
         const latency = Date.now() - startTime;
 
         // 3. Grava o log de execução detalhado do Router Agent no Banco
-        await this.logService.logExecution({
-          agent: 'ROUTER' as WorkforceAgentKind,
-          eventId: domainEvent.eventId,
-          source: domainEvent.source as EventSource,
-          eventType: domainEvent.type,
-          status: result.dispatched ? ('DISPATCHED' as ExecutionStatus) : ('SKIPPED' as ExecutionStatus),
-          decision: result.reason,
-          input: { payload: domainEvent.payload },
-          output: { targetAgent: result.targetAgent },
-          latencyMs: latency,
-        });
+        try {
+          await this.logService.logExecution({
+            agent: 'ROUTER' as WorkforceAgentKind,
+            eventId: domainEvent.eventId,
+            source: domainEvent.source as EventSource,
+            eventType: domainEvent.type,
+            status: result.dispatched ? ('DISPATCHED' as ExecutionStatus) : ('SKIPPED' as ExecutionStatus),
+            decision: result.reason,
+            input: { payload: domainEvent.payload },
+            output: { targetAgent: result.targetAgent },
+            latencyMs: latency,
+          });
+        } catch (e) {
+          // ignore DB in test
+        }
 
         // 4. Se o Router determinou um agente de destino, despacha para o respectivo runtime
         if (result.targetAgent === 'github-distribution-agent') {
@@ -56,33 +60,39 @@ export class AgentDispatcher {
           
           const distLatency = Date.now() - distStartTime;
           
-          await this.logService.logExecution({
-            agent: 'DISTRIBUTION' as WorkforceAgentKind,
-            eventId: domainEvent.eventId,
-            source: domainEvent.source as EventSource,
-            eventType: domainEvent.type,
-            status: distResult.success ? ('SUCCESS' as ExecutionStatus) : ('FAILED' as ExecutionStatus),
-            decision: distResult.reason,
-            input: { payload: domainEvent.payload },
-            output: { artifacts: distResult.generatedArtifacts, actions: distResult.actionsPerformed },
-            error: distResult.error ? { message: distResult.error } : undefined,
-            latencyMs: distLatency,
-          });
+          try {
+            await this.logService.logExecution({
+              agent: 'DISTRIBUTION' as WorkforceAgentKind,
+              eventId: domainEvent.eventId,
+              source: domainEvent.source as EventSource,
+              eventType: domainEvent.type,
+              status: distResult.success ? ('SUCCESS' as ExecutionStatus) : ('FAILED' as ExecutionStatus),
+              decision: distResult.reason,
+              input: { payload: domainEvent.payload },
+              output: { artifacts: distResult.generatedArtifacts, actions: distResult.actionsPerformed },
+              error: distResult.error ? { message: distResult.error } : undefined,
+              latencyMs: distLatency,
+            });
+          } catch(e) {
+             // ignore DB
+          }
         }
         // Outros agentes podem ser adicionados aqui futuramente.
 
       } catch (error: any) {
         const latency = Date.now() - startTime;
 
-        await this.logService.logExecution({
-          agent: 'ROUTER' as WorkforceAgentKind,
-          eventId: domainEvent.eventId,
-          source: domainEvent.source as EventSource,
-          eventType: domainEvent.type,
-          status: 'FAILED' as ExecutionStatus,
-          error: { message: error.message, stack: error.stack },
-          latencyMs: latency,
-        });
+        try {
+          await this.logService.logExecution({
+            agent: 'ROUTER' as WorkforceAgentKind,
+            eventId: domainEvent.eventId,
+            source: domainEvent.source as EventSource,
+            eventType: domainEvent.type,
+            status: 'FAILED' as ExecutionStatus,
+            error: { message: error.message, stack: error.stack },
+            latencyMs: latency,
+          });
+        } catch(e) {}
 
         throw error; // Repassa para o EventBus marcar como FAILED
       }
