@@ -2,7 +2,7 @@
 
 Este documento descreve os passos seguros para desativar o modo `dryRun` e permitir que a ROTA publique releases e faça comentários reais no GitHub.
 
-## Fase 1: Simulação Completa (Status: ✅ Concluído)
+## Fase 1: Simulação Completa (Status:  Concluído)
 - [x] Agente recebe eventos via EventBus (`github-distribution-agent`).
 - [x] Agente roda policies sem crashar.
 - [x] Adapters `GitHubReadService` e `GitHubWriteService` implementados.
@@ -13,7 +13,7 @@ Este documento descreve os passos seguros para desativar o modo `dryRun` e permi
 - [ ] Manter `ROTA_GITHUB_DRY_RUN="true"`.
 - [ ] Enviar PR e verificar se o `AgentExecutionLog` no Postgres capta a leitura de commits (`update_docs_surface`).
 
-## Fase 3: Primeira Ação de Escrita Parcial (Comentário em PR) (Status: ✅ Concluído / Pronto)
+## Fase 3: Primeira Ação de Escrita Parcial (Comentário em PR) (Status:  Concluído / Pronto)
 - [x] O código foi ajustado com a flag `liveComments` via `ROTA_GITHUB_LIVE_COMMENTS`.
 - [x] Criado script de teste para validar o bypass de segurança (`scripts/test-live-comment.ts`).
 - [ ] O operador (você) deve rodar o script apontando um PR válido.

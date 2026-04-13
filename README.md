@@ -6,10 +6,10 @@
 
 <br />
 
-> 🏆 **Hackathon Submission Note**: ROTA is built for the AI x Web3 Agentic Economy. We replace "chat" with **economic settlement**. This repository contains the complete Hybrid Architecture (Offchain Fastify + Onchain Soroban), x402 payment guards, the fully autonomous Agentic Workforce, and two real monetizable skills.
+>  **Hackathon Submission Note**: ROTA is built for the AI x Web3 Agentic Economy. We replace "chat" with **economic settlement**. This repository contains the complete Hybrid Architecture (Offchain Fastify + Onchain Soroban), x402 payment guards, the fully autonomous Agentic Workforce, and two real monetizable skills.
 > 
-> 📺 **[Watch the 3-Minute Demo Pitch](./docs/hackathon-demo.md)** | 🏗 **[Read the Architecture Summary](./docs/architecture-summary.md)**
-> 🚀 **[Run the Local Demo](./scripts/demo-start.sh)**
+>  **[Watch the 3-Minute Demo Pitch](./docs/hackathon-demo.md)** |  **[Read the Architecture Summary](./docs/architecture-summary.md)**
+>  **[Run the Local Demo](./scripts/demo-start.sh)**
 
 ---
 

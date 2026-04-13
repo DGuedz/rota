@@ -17,7 +17,7 @@ A solução exige a implementação estrita das ferramentas oficiais da Stellar 
 
 ---
 
-# 🛠 Plano de Execução (4 Grandes Tarefas / 8 Subtarefas)
+#  Plano de Execução (4 Grandes Tarefas / 8 Subtarefas)
 
 Abaixo o detalhamento técnico e prático para o Trae / Engenheiro de Protocolo executar a integração em tempo recorde para o hackathon.
 

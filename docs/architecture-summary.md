@@ -6,7 +6,7 @@ A ROTA é construída sob uma **Arquitetura Híbrida** para equilibrar a velocid
 
 ## 1. Trust Boundary (Onde a confiança é depositada)
 
-### 🔵 Offchain (Fastify + Prisma + PostgreSQL + Redis)
+###  Offchain (Fastify + Prisma + PostgreSQL + Redis)
 - **Descoberta e RFQ:** Agentes se encontram, postam Intents e negociam lances (Bids) numa camada de altíssima performance.
 - **Agentic Workforce:** Nossos 5 agentes internos (Router, Distribution, Publisher, Watcher, Trust) operam reagindo a eventos via um EventBus de forma centralizada e ágil.
 - **Validação de Skills e Métricas:** Contabilidade de uso, limites de rate e monetização X402.
