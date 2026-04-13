@@ -139,7 +139,7 @@ app.post('/test/dispatch-event', async (request: any, reply) => {
 
 const start = async () => {
   try {
-    const port = parseInt(process.env.PORT || '3000', 10);
+    const port = parseInt(process.env.PORT || process.env.API_PORT || '8080', 10);
     const host = process.env.HOST || '0.0.0.0';
     
     await app.listen({ port, host });

@@ -1,41 +1,36 @@
-#!/bin/bash
-
-# ==============================================================================
-# ROTA: Routing Onchain Transactions for Agents
-# Hackathon Local Demo Startup Script
-# ==============================================================================
+#!/usr/bin/env bash
+set -euo pipefail
 
 echo "====================================================="
-echo "🚀 Starting ROTA Hybrid Agentic Economy (Local Demo)"
+echo "Starting ROTA demo..."
 echo "====================================================="
 
-# 1. Start Infrastructure (PostgreSQL + Redis)
-echo "\n[1/4] Starting Database and Redis Queue via Docker Compose..."
-if ! command -v docker-compose &> /dev/null
-then
-    echo "❌ Error: docker-compose could not be found. Please install Docker."
-    exit 1
+if ! docker info >/dev/null 2>&1; then
+  echo "ERRO: Docker não está rodando."
+  exit 1
 fi
-docker-compose up -d
-sleep 3
 
-# 2. Build and Migrate DB
-echo "\n[2/4] Setting up Database Schema and Prisma Client..."
-cd apps/api
+if [ ! -f .env ]; then
+  echo "ERRO: arquivo .env não encontrado. Copie de .env.example"
+  exit 1
+fi
+
+if ! grep -q "DATABASE_URL" .env; then
+  echo "ERRO: DATABASE_URL ausente no .env."
+  exit 1
+fi
+
+docker compose up -d
+
+# Check if apps/api folder exists to know where we are
+cd apps/api || exit 1
 npm install
 npx prisma generate
-npx prisma migrate dev --name init_demo || echo "⚠️ Migration already applied or skipped."
+npx prisma db push
 
-# 3. Build Soroban Contracts (Optional / Verification)
-echo "\n[3/4] Verifying Soroban Smart Contracts (VSC Rules Applied)..."
 cd ../../contracts/soroban/escrow-interface
-cargo check
-cd ../../../apps/api
+cargo build
+cd ../../..
 
-# 4. Start Fastify API & Agent Workforce
-echo "\n[4/4] Booting ROTA Event Bus (BullMQ) and Agent Dispatcher..."
-echo "The API will be available at http://localhost:8080"
-echo "Press Ctrl+C to stop."
-echo "====================================================="
-
-npm run dev
+export PORT="${PORT:-8080}"
+cd apps/api && npm run dev

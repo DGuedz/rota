@@ -1,8 +1,8 @@
-use soroban_sdk::{Env, Symbol, Address, String};
+use soroban_sdk::{Env, Symbol, symbol_short, Address, String};
 use crate::types::EscrowStatus;
 
 // Helper constants for topics
-const TOPIC_ESCROW: Symbol = Symbol::short("ESCROW");
+const TOPIC_ESCROW: Symbol = symbol_short!("ESCROW");
 
 pub fn emit_escrow_initialized(
     env: &Env,
@@ -11,7 +11,7 @@ pub fn emit_escrow_initialized(
     seller: &Address,
     amount: i128,
 ) {
-    let topics = (TOPIC_ESCROW, Symbol::short("INIT"), escrow_id.clone());
+    let topics = (TOPIC_ESCROW, symbol_short!("INIT"), escrow_id.clone());
     env.events().publish(topics, (buyer.clone(), seller.clone(), amount));
 }
 
@@ -21,7 +21,7 @@ pub fn emit_bond_deposited(
     seller: &Address,
     bond_amount: i128,
 ) {
-    let topics = (TOPIC_ESCROW, Symbol::short("BOND"), escrow_id.clone());
+    let topics = (TOPIC_ESCROW, symbol_short!("BOND"), escrow_id.clone());
     env.events().publish(topics, (seller.clone(), bond_amount));
 }
 
@@ -30,7 +30,7 @@ pub fn emit_proof_ref_submitted(
     escrow_id: &String,
     proof_hash: &String,
 ) {
-    let topics = (TOPIC_ESCROW, Symbol::short("PROOF"), escrow_id.clone());
+    let topics = (TOPIC_ESCROW, symbol_short!("PROOF"), escrow_id.clone());
     env.events().publish(topics, proof_hash.clone());
 }
 
@@ -41,7 +41,7 @@ pub fn emit_escrow_settled(
     seller: &Address,
     amount_paid: i128,
 ) {
-    let topics = (TOPIC_ESCROW, Symbol::short("SETTLED"), escrow_id.clone());
+    let topics = (TOPIC_ESCROW, symbol_short!("SETTLED"), escrow_id.clone());
     env.events().publish(topics, (buyer.clone(), seller.clone(), amount_paid));
 }
 
@@ -51,7 +51,7 @@ pub fn emit_bond_slashed(
     seller: &Address,
     slash_amount: i128,
 ) {
-    let topics = (TOPIC_ESCROW, Symbol::short("SLASHED"), escrow_id.clone());
+    let topics = (TOPIC_ESCROW, symbol_short!("SLASHED"), escrow_id.clone());
     env.events().publish(topics, (seller.clone(), slash_amount));
 }
 
@@ -60,7 +60,7 @@ pub fn emit_escrow_cancelled(
     escrow_id: &String,
     status_before_cancel: EscrowStatus,
 ) {
-    let topics = (TOPIC_ESCROW, Symbol::short("CANCEL"), escrow_id.clone());
+    let topics = (TOPIC_ESCROW, symbol_short!("CANCEL"), escrow_id.clone());
     env.events().publish(topics, status_before_cancel);
 }
 
@@ -69,7 +69,7 @@ pub fn emit_escrow_disputed(
     escrow_id: &String,
     buyer: &Address,
 ) {
-    let topics = (TOPIC_ESCROW, Symbol::short("DISPUTED"), escrow_id.clone());
+    let topics = (TOPIC_ESCROW, symbol_short!("DISPUTED"), escrow_id.clone());
     env.events().publish(topics, buyer.clone());
 }
 
@@ -77,6 +77,6 @@ pub fn emit_intrusion_detected(
     env: &Env,
     attacker: &Address,
 ) {
-    let topics = (Symbol::short("SECURITY"), Symbol::short("INTRUSION"));
+    let topics = (symbol_short!("SECURITY"), symbol_short!("INTRUSION"));
     env.events().publish(topics, attacker.clone());
 }
