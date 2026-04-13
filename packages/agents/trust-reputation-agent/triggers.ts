@@ -1,18 +1,37 @@
-import { RotaEvent, EventType } from '@rota/shared-types';
+import { ReputationSignal } from "../../../apps/api/src/reputation/reputation.types";
 
-export interface ReputationTrigger {
-  eventType: EventType;
-  actionRequired: 'process_success' | 'process_dispute' | 'process_slash' | 'process_sla_failure';
-}
+export type TrustReputationTrigger =
+  | "escrow.settled"
+  | "escrow.slashed"
+  | "proof.submitted"
+  | "settlement.dispute"
+  | "sla.failed";
 
-export const reputationTriggers: ReputationTrigger[] = [
-  { eventType: 'settlement.success', actionRequired: 'process_success' },
-  { eventType: 'settlement.dispute', actionRequired: 'process_dispute' },
-  { eventType: 'settlement.slash', actionRequired: 'process_slash' },
-  { eventType: 'sla.failed', actionRequired: 'process_sla_failure' }
-];
-
-export function getRequiredAction(event: RotaEvent): ReputationTrigger['actionRequired'] | null {
-  const trigger = reputationTriggers.find(t => t.eventType === event.type);
-  return trigger ? trigger.actionRequired : null;
-}
+export const trustReputationTriggers: Record<
+  TrustReputationTrigger,
+  {
+    signal: ReputationSignal;
+    description: string;
+  }
+> = {
+  "escrow.settled": {
+    signal: "ESCROW_SETTLED",
+    description: "Successful settlement should reward the provider",
+  },
+  "escrow.slashed": {
+    signal: "ESCROW_SLASHED",
+    description: "Slashed escrow should heavily penalize the provider",
+  },
+  "proof.submitted": {
+    signal: "PROOF_SUBMITTED",
+    description: "Proof submission gives a small positive signal",
+  },
+  "settlement.dispute": {
+    signal: "SETTLEMENT_DISPUTE",
+    description: "Dispute should reduce trust score",
+  },
+  "sla.failed": {
+    signal: "SLA_FAILED",
+    description: "SLA failure should penalize the provider",
+  },
+};

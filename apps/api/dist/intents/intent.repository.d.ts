@@ -1,0 +1,135 @@
+import { PrismaClient, IntentStatus } from '@prisma/client';
+export declare class IntentRepository {
+    private prisma;
+    constructor(prisma: PrismaClient);
+    createIntent(data: {
+        buyerAgentId: string;
+        skillId?: string;
+        title: string;
+        description?: string;
+        maxPrice?: number;
+        preferredAssetCode?: string;
+        preferredAssetIssuer?: string;
+        requiredBond?: number;
+        minReputation?: number;
+        deadlineAt?: Date;
+        validationCriteria?: any;
+    }): Promise<{
+        id: string;
+        status: import(".prisma/client").$Enums.IntentStatus;
+        buyerAgentId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        skillId: string | null;
+        title: string;
+        description: string | null;
+        maxPrice: import("@prisma/client/runtime/library").Decimal | null;
+        preferredAssetCode: string;
+        preferredAssetIssuer: string | null;
+        requiredBond: import("@prisma/client/runtime/library").Decimal | null;
+        minReputation: number;
+        deadlineAt: Date | null;
+        validationCriteria: import("@prisma/client/runtime/library").JsonValue | null;
+        selectedBidId: string | null;
+    }>;
+    findById(id: string): Promise<({
+        buyerAgent: {
+            id: string;
+            status: import(".prisma/client").$Enums.AgentStatus;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            createdAt: Date;
+            updatedAt: Date;
+            walletAddress: string;
+            displayName: string | null;
+            reputationScore: number;
+            totalExecutions: number;
+            totalSuccesses: number;
+            totalDisputes: number;
+            totalStrikes: number;
+        };
+        skill: {
+            id: string;
+            name: string;
+            isActive: boolean;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            createdAt: Date;
+            updatedAt: Date;
+            slaSeconds: number;
+            description: string;
+            requiredBond: import("@prisma/client/runtime/library").Decimal;
+            agentId: string;
+            slug: string;
+            category: string;
+            endpointUrl: string | null;
+            priceMode: import(".prisma/client").$Enums.PriceMode;
+            priceConfig: import("@prisma/client/runtime/library").JsonValue;
+            reputationThreshold: number;
+        } | null;
+        rfq: {
+            id: string;
+            status: import(".prisma/client").$Enums.RFQStatus;
+            intentId: string;
+            buyerAgentId: string;
+            createdAt: Date;
+            updatedAt: Date;
+            broadcastPayload: import("@prisma/client/runtime/library").JsonValue | null;
+            openedAt: Date;
+            closesAt: Date | null;
+            awardedBidId: string | null;
+        } | null;
+    } & {
+        id: string;
+        status: import(".prisma/client").$Enums.IntentStatus;
+        buyerAgentId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        skillId: string | null;
+        title: string;
+        description: string | null;
+        maxPrice: import("@prisma/client/runtime/library").Decimal | null;
+        preferredAssetCode: string;
+        preferredAssetIssuer: string | null;
+        requiredBond: import("@prisma/client/runtime/library").Decimal | null;
+        minReputation: number;
+        deadlineAt: Date | null;
+        validationCriteria: import("@prisma/client/runtime/library").JsonValue | null;
+        selectedBidId: string | null;
+    }) | null>;
+    findAll(): Promise<{
+        id: string;
+        status: import(".prisma/client").$Enums.IntentStatus;
+        buyerAgentId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        skillId: string | null;
+        title: string;
+        description: string | null;
+        maxPrice: import("@prisma/client/runtime/library").Decimal | null;
+        preferredAssetCode: string;
+        preferredAssetIssuer: string | null;
+        requiredBond: import("@prisma/client/runtime/library").Decimal | null;
+        minReputation: number;
+        deadlineAt: Date | null;
+        validationCriteria: import("@prisma/client/runtime/library").JsonValue | null;
+        selectedBidId: string | null;
+    }[]>;
+    updateStatus(id: string, status: IntentStatus): Promise<{
+        id: string;
+        status: import(".prisma/client").$Enums.IntentStatus;
+        buyerAgentId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        skillId: string | null;
+        title: string;
+        description: string | null;
+        maxPrice: import("@prisma/client/runtime/library").Decimal | null;
+        preferredAssetCode: string;
+        preferredAssetIssuer: string | null;
+        requiredBond: import("@prisma/client/runtime/library").Decimal | null;
+        minReputation: number;
+        deadlineAt: Date | null;
+        validationCriteria: import("@prisma/client/runtime/library").JsonValue | null;
+        selectedBidId: string | null;
+    }>;
+}
+//# sourceMappingURL=intent.repository.d.ts.map

@@ -1,386 +1,109 @@
-# 🚀 ROTA — Routing Onchain Transactions for Agents
+<div align="center">
+  <h1>ROTA</h1>
+  <p><strong>Routing Onchain Transactions for Agents</strong></p>
+  <p>The trusted routing layer where autonomous agents discover capabilities, negotiate conditions, and settle value with onchain proof.</p>
+</div>
 
-> **The trusted routing layer where autonomous agents discover capabilities, negotiate conditions, and settle value with onchain proof.**
+<br />
 
----
-
-## 🎯 The Problem
-
-Today's autonomous agents can communicate seamlessly, but they **lack a secure, trustless way to settle value onchain**. Without proof of execution and guaranteed settlement:
-
-- ❌ No mechanism to prevent fraud or task abandonment
-- ❌ No verifiable proof that a skill was actually executed
-- ❌ No way to penalize bad actors or reward reliable agents
-- ❌ Settlement requires trust in centralized intermediaries
-
-**Result:** Agents remain siloed. No economic layer. No marketplace of execution.
+> 🏆 **Hackathon Submission Note**: ROTA is built for the AI x Web3 Agentic Economy. We replace "chat" with **economic settlement**. This repository contains the complete Hybrid Architecture (Offchain Fastify + Onchain Soroban), x402 payment guards, the fully autonomous Agentic Workforce, and two real monetizable skills.
+> 
+> 📺 **[Watch the 3-Minute Demo Pitch](./docs/hackathon-demo.md)** | 🏗 **[Read the Architecture Summary](./docs/architecture-summary.md)**
+> 🚀 **[Run the Local Demo](./scripts/demo-start.sh)**
 
 ---
 
-## ✅ The Solution: ROTA Infrastructure
+## The Protocol
 
-ROTA provides the **missing economic layer** for autonomous agents:
+Autonomous agents can communicate easily, but they lack a secure, native rail to **settle economic value** without fraud risk. ROTA provides the coordination infrastructure for agent-to-agent (A2A) commerce.
 
-### 💰 **HTTP 402 Payment Required + Micropayment Protocol (MPP)**
-Every skill execution requires payment. Agents negotiate conditions upfront with transparent pricing.
-
-### 🔒 **Escrow Smart Contracts (Soroban)**
-Value is locked in escrow until proof of execution is validated. Trustless settlement. No intermediaries.
-
-### ⭐ **On-Chain Reputation System**
-- **Success:** Agent's reputation grows, guarantee is returned + reward
-- **Failure:** Guarantee is slashed 50% (anti-spam mechanism)
-
-### 🔐 **Immutable Proof**
-Every execution generates a cryptographic signature anchored to the Stellar ledger. Permanent, auditable, final.
+ROTA is not a chatbot or a generic marketplace. It is an **Operating System for Agentic Commerce** that handles:
+- **Skill Discovery**: A catalog of standardized agentic capabilities.
+- **Private RFQ**: Request-for-Quote negotiation for complex intents.
+- **Onchain Escrow**: Value locked securely via Soroban Smart Contracts.
+- **Proof & Settlement**: Immutable cryptographic proofs mapped to reputation scores.
+- **Paid Execution (x402)**: Direct monetization for granular skills.
 
 ---
 
-## ⚡ Execute in 5 Minutes: Get Started Now
+## Core Architecture (Hybrid Trust)
 
-### 1️⃣ Install ROTA CLI + SDK
+ROTA operates on a strict boundary between speed and trust:
+
+### Offchain (Speed & Coordination)
+- Intent routing and matching.
+- Skill catalog indexing.
+- SLA and policy validation.
+- Reputation aggregation.
+
+### Onchain (Trust & Settlement) via Stellar & Soroban
+- Escrow locking and bond deposits.
+- XDR generation and transaction anchoring.
+- Slashing and deterministic payouts.
+
+---
+
+## Quickstart & Execution
+
+ROTA is built for agents. Execution is direct and programmable.
+
+### 1. Paid Execution (x402)
+Execute a skill directly by providing mathematical proof of payment.
 
 ```bash
-npm install -g @rota/cli
-npm install @rota/sdk
+curl -X POST https://api.rota.network/skills/wallet-risk-check/execute \
+  -H "Content-Type: application/json" \
+  -H "x-rota-payment-token: <X402_PAYMENT_PROOF>" \
+  -d '{"walletAddress": "GNEW123456789EXAMPLE"}'
 ```
 
-### 2️⃣ Publish Your Skill (Capability)
+### 2. Escrow & Intent Flow
+For complex skills requiring skin in the game (Bond) and SLA validation.
 
 ```bash
-rota intent publish \
-  --name "image-resize" \
-  --description "Resize images to 1080p" \
-  --price 0.01 \
-  --guarantee 0.002 \
-  --tier standard
-```
+# 1. Publish an Intent
+rota intent publish --skill rwa-intent-parser --max-price 50 --asset USDC
 
-**Output:**
-```json
-{
-  "skill_id": "skill_abc123xyz",
-  "endpoint": "https://rota.agents.dev/skills/image-resize",
-  "status": "published",
-  "discoverable": true
-}
+# 2. Lock Escrow (Buyer)
+rota escrow fund --intent-id <ID> --sign
+
+# 3. Submit Proof (Seller)
+rota proof submit --escrow-id <ID> --hash <RESULT_HASH>
 ```
 
 ---
 
-### 3️⃣ Agent Discovers & Funds Escrow
+## Skill Spotlight: `wallet-risk-check` & `proof-verifier`
 
-```typescript
-import { RotaClient } from '@rota/sdk';
+Our ecosystem has two natively monetized capabilities demonstrating x402 utility:
 
-const client = new RotaClient({
-  network: 'stellar-testnet',
-  agentId: 'agent_xyz789'
-});
+1. **`wallet-risk-check`** ([README](./skills/wallet-risk-check/README.md))
+   - Allows an agent to quickly assess the risk of an onchain counterparty before a transaction.
+   - Price: `0.01 USDC`
 
-// Find the skill
-const skill = await client.skills.discover('image-resize');
-
-// Fund escrow (20% of execution value)
-const escrow = await client.escrow.fund({
-  skillId: skill.id,
-  executionValue: 0.01,
-  guarantee: 0.002,
-  agentPublicKey: 'G...'
-});
-
-console.log(`Escrow created: ${escrow.escrowId}`);
-console.log(`Bond locked: ${escrow.guarantee} XLM`);
-```
+2. **`proof-verifier`** ([README](./skills/proof-verifier/README.md))
+   - Validates cryptographic proof payloads and signatures for Escrow resolution.
+   - Price: `0.05 USDC`
 
 ---
 
-### 4️⃣ Execute Skill with Proof
+## Documentation
 
-```bash
-rota skill execute \
-  --skill-id skill_abc123xyz \
-  --payload '{"url":"https://example.com/image.png","width":1080}' \
-  --proof-format stellar-txhash
-```
+Explore the ROTA internal architecture and protocol rules:
 
-**Response:**
-```json
-{
-  "execution_id": "exec_qwerty123",
-  "status": "success",
-  "result": "https://s3.rota.dev/resized_1080p.png",
-  "proof": {
-    "hash": "sha256:a3f5d8e9c2b1f4g7h9...",
-    "timestamp": "2026-04-12T15:32:00Z",
-    "stellar_tx_hash": "8b5e9f3d2a1c6g7h4..."
-  }
-}
-```
+- [Architecture Overview](./docs/architecture/README.md)
+- [Agent Runtime](./docs/backend/agent-runtime.md)
+- [Backend & Domain Models](./docs/backend/domain_models.md)
+- [Soroban Bridge & Escrow](./docs/backend/backend-soroban-bridge.md)
+- [Contract Event Indexer](./docs/backend/contract-indexer.md)
 
 ---
 
-### 5️⃣ Submit Proof & Settle
+## The GitHub Distribution Doctrine
 
-```bash
-rota proof submit \
-  --execution-id exec_qwerty123 \
-  --proof-hash "sha256:a3f5d8e9c2b1f4g7h9..." \
-  --proof-signature "stellar_txhash:8b5e9f3d2a1c6g7h4..."
-```
-
-**Chain Action:**
-- ✅ Proof validated on Soroban
-- ✅ Escrow released to skill provider
-- ✅ Agent's reputation +5
-- ✅ Guarantee returned to agent
+In ROTA, **GitHub is the funnel**. 
+This repository serves as the public surface for discovery. Every folder inside `/skills` is a product. Every commit that publishes a skill expands the protocol's GDP. Open repository, paid execution.
 
 ---
 
-## 💎 SLA, Pricing & Guarantees
-
-### Service Tiers
-
-| Feature | **Standard** | **Premium** |
-|---------|------------|-----------|
-| **Price per Execution** | $0.01 | $0.05 |
-| **Uptime SLA** | 99.0% | 99.9% |
-| **Response Time** | <2s | <500ms |
-| **Support** | Community | 24/7 Email |
-| **Execution Guarantee Bond** | 20% | 25% |
-| **Slashing on Failure** | 50% | 75% |
-
-### How the Bond Model Works
-
-**You deposit a guarantee (bond) to prove you're serious:**
-
-```
-Execution Value: 0.01 XLM
-Guarantee Required: 0.002 XLM (20%)
-Total Locked in Escrow: 0.012 XLM
-
-┌─────────────────────────────────────────┐
-│ ON-CHAIN ESCROW (Soroban Contract)      │
-├─────────────────────────────────────────┤
-│ Agent Deposit:     0.012 XLM (locked)   │
-│ Timeout:           5 minutes             │
-│ Validator:         ROTA Oracle           │
-└─────────────────────────────────────────┘
-
-SCENARIO 1: Proof Submitted ✅
-  → Skill provider receives: 0.01 XLM
-  → Agent bond returned: 0.002 XLM
-  → Agent reputation: +5 points
-  
-SCENARIO 2: Timeout / Proof Invalid ❌
-  → Skill provider receives: 0.010 XLM (standard)
-  → Agent loses 50% bond: 0.001 XLM slashed
-  → Agent bond refunded: 0.001 XLM
-  → Agent reputation: -10 points
-```
-
-### Pricing Formula
-
-```
-TOTAL_COST = EXECUTION_FEE + (GUARANTEE_BOND × INTEREST_RATE)
-
-Examples:
-  Standard: $0.01 + ($0.002 × 5%) = $0.0101
-  Premium:  $0.05 + ($0.0125 × 10%) = $0.05125
-```
-
----
-
-## 🔐 Immutable Proof: Every Execution is Permanent
-
-### What Gets Recorded?
-
-Each skill execution generates a **cryptographic proof** anchored to the Stellar ledger:
-
-```json
-{
-  "proof_id": "proof_stellar_8b5e9f3d2a1c6g7h4",
-  "execution_id": "exec_qwerty123",
-  "skill_id": "skill_abc123xyz",
-  "agent_id": "agent_xyz789",
-  "timestamp": "2026-04-12T15:32:00Z",
-  "status": "success",
-  
-  "execution_hash": "sha256:a3f5d8e9c2b1f4g7h9...",
-  "proof_signature": "ed25519:7k9p2m5x3q1w8e4r9t...",
-  
-  "stellar_ledger_sequence": 47382901,
-  "stellar_tx_hash": "8b5e9f3d2a1c6g7h4jk2l3m5n6p7q8r9...",
-  "stellar_network": "testnet",
-  
-  "result_hash": "sha256:f2g3h4i5j6k7l8m9n0...",
-  "metadata": {
-    "duration_ms": 1250,
-    "region": "us-east-1",
-    "validator": "rota-validator-01"
-  }
-}
-```
-
-### Why This Matters
-
-✅ **Immutable:** Anchored to Stellar blockchain. Cannot be altered.  
-✅ **Auditable:** Viewable on Stellar Explorer forever.  
-✅ **Trustless:** Proof exists independent of ROTA infrastructure.  
-✅ **Final:** No disputes, no chargebacks. Settlement is final.
-
-### View Your Proof
-
-```bash
-rota proof view \
-  --execution-id exec_qwerty123
-
-# Or on Stellar Explorer:
-# https://stellar.expert/explorer/testnet/tx/8b5e9f3d2a1c6g7h4jk2l3m5n6p7q8r9
-```
-
----
-
-## 🚀 Integration Examples
-
-### Python Agent Using ROTA
-
-```python
-from rota_sdk import RotaClient
-
-client = RotaClient(network='stellar-testnet')
-
-# Discover skills
-skills = client.skills.search('resize', tier='standard')
-
-# Execute with automatic escrow
-result = client.execute(
-    skill_id=skills[0]['id'],
-    payload={'url': 'https://example.com/img.jpg'},
-    auto_proof=True
-)
-
-print(f"Success: {result['proof']['stellar_tx_hash']}")
-```
-
-### JavaScript/TypeScript Agent
-
-```typescript
-import { RotaClient } from '@rota/sdk';
-
-const client = new RotaClient({ 
-  network: 'stellar-testnet',
-  agentKey: process.env.AGENT_SECRET
-});
-
-async function executeSkill() {
-  const execution = await client.skills.execute({
-    name: 'image-resize',
-    params: { width: 1080 },
-    submitProof: true // Automatic proof submission
-  });
-  
-  console.log(`Proof: ${execution.proof.stellarTxHash}`);
-}
-
-executeSkill();
-```
-
----
-
-## 📊 Dashboard & Monitoring
-
-View your reputation, execution history, and earnings:
-
-```
-https://dashboard.rota.dev/agent/agent_xyz789
-
-Dashboard shows:
-  • Reputation Score: 487/500
-  • Total Executions: 1,243
-  • Success Rate: 99.2%
-  • Earnings: 12.4 XLM
-  • Bonded: 0.05 XLM
-  • Slashed: 0.001 XLM (lifetime)
-```
-
----
-
-## 🔧 Advanced Configuration
-
-### Custom Slashing Rules
-
-```bash
-rota config set \
-  --slashing-strategy "progressive" \
-  --first-failure-slash 25% \
-  --second-failure-slash 50% \
-  --cooldown-period 24h
-```
-
-### Multi-Skill Provider
-
-```bash
-rota skill publish \
-  --batch config-skills.json \
-  --auto-scale true
-```
-
----
-
-## 🏆 Why Choose ROTA?
-
-| Aspect | ROTA | Traditional APIs |
-|--------|------|-----------------|
-| **Settlement** | Onchain, instant | 30+ days, trust required |
-| **Proof** | Immutable, Stellar-anchored | None |
-| **Guarantee** | Bond-backed | Vendor promise |
-| **Reputation** | Transparent ledger | Opaque metrics |
-| **Marketplace** | Open, permissionless | Vendor lock-in |
-
----
-
-## 📦 API Reference
-
-Full documentation: [https://docs.rota.dev](https://docs.rota.dev)
-
-### Key Endpoints
-
-```
-POST   /v1/intents/publish        # Publish a skill
-POST   /v1/escrow/fund            # Fund escrow for execution
-POST   /v1/skills/execute         # Execute a skill
-POST   /v1/proofs/submit          # Submit proof & settle
-GET    /v1/skills/discover        # Find skills
-GET    /v1/agent/{id}/reputation  # Check reputation
-```
-
----
-
-## 🌐 Networks Supported
-
-- **Stellar Testnet** (development)
-- **Stellar Public Network** (production Q2 2026)
-
----
-
-## 📝 License
-
-MIT License. See [LICENSE](./LICENSE) for details.
-
----
-
-## 💬 Community & Support
-
-- **Discord:** [discord.gg/rota](https://discord.gg/rota)
-- **Docs:** [docs.rota.dev](https://docs.rota.dev)
-- **Email:** support@rota.dev
-- **Twitter:** [@RotaAgents](https://twitter.com/RotaAgents)
-
----
-
-**Ready to launch your autonomous agent economy?**
-
-🚀 [Get Started Now](https://docs.rota.dev/quickstart)  
-💡 [View Examples](https://github.com/DGuedz/rota/tree/main/examples)  
-🔗 [Join the Community](https://discord.gg/rota)
+**Built on Stellar | Powered by Soroban**

@@ -1,0 +1,8 @@
+/Users/doublegreen/a2a_server_economy_stellar_hacks/rota/contracts/soroban/escrow-interface/target/debug/deps/serde_with_macros-1165860c6f531002.d: /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.12.0/src/lib.rs /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.12.0/src/apply.rs /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.12.0/src/lazy_bool.rs /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.12.0/src/utils.rs
+
+/Users/doublegreen/a2a_server_economy_stellar_hacks/rota/contracts/soroban/escrow-interface/target/debug/deps/libserde_with_macros-1165860c6f531002.dylib: /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.12.0/src/lib.rs /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.12.0/src/apply.rs /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.12.0/src/lazy_bool.rs /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.12.0/src/utils.rs
+
+/Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.12.0/src/lib.rs:
+/Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.12.0/src/apply.rs:
+/Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.12.0/src/lazy_bool.rs:
+/Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_with_macros-3.12.0/src/utils.rs:

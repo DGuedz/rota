@@ -19,10 +19,11 @@ export interface TriggerDefinition {
 // Mapa de Gatilhos: Relaciona um evento recebido ao agente correspondente
 export const supportedTriggers: TriggerDefinition[] = [
   // --- GitHub Distribution Agent ---
-  { eventName: 'github.push', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
-  { eventName: 'github.pr_merged', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
-  { eventName: 'github.release', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
-  { eventName: 'github.skill_folder_created', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
+  { eventName: 'repo.push_main', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
+  { eventName: 'repo.pr_merged', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
+  { eventName: 'repo.release_draft', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
+  { eventName: 'repo.skill_updated', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
+  { eventName: 'repo.docs_changed', source: 'github', targetAgent: 'github-distribution-agent', debounceMs: 0, retryStrategy: 'drop' },
   
   // --- Skill Publisher Agent ---
   { eventName: 'feature.ready', source: 'github', targetAgent: 'skill-publisher-agent', debounceMs: 0, retryStrategy: 'drop' },
@@ -40,5 +41,44 @@ export const supportedTriggers: TriggerDefinition[] = [
 ];
 
 export function resolveTrigger(event: RotaEvent): TriggerDefinition | undefined {
+  // Triggers do Skill Publisher Agent
+  if (event.type.startsWith('skill.publish_requested') || event.type.startsWith('repo.skill_candidate')) {
+    return {
+      eventName: event.type,
+      source: event.source,
+      targetAgent: 'skill-publisher-agent',
+      debounceMs: 0,
+      retryStrategy: 'drop'
+    };
+  }
+
+  // Triggers do Trust Reputation Agent
+  if ([
+    'escrow.settled',
+    'escrow.slashed',
+    'proof.submitted',
+    'settlement.dispute',
+    'sla.failed'
+  ].includes(event.type)) {
+    return {
+      eventName: event.type,
+      source: event.source,
+      targetAgent: 'trust-reputation-agent',
+      debounceMs: 0,
+      retryStrategy: 'retry_with_backoff'
+    };
+  }
+
+  // Triggers do Protocol Watcher Agent
+  if (event.type.startsWith('protocol.')) {
+    return {
+      eventName: event.type,
+      source: event.source,
+      targetAgent: 'protocol-watcher-agent',
+      debounceMs: 3600000,
+      retryStrategy: 'drop'
+    };
+  }
+
   return supportedTriggers.find(t => t.eventName === event.type && t.source === event.source);
 }

@@ -1,22 +1,37 @@
-import { PolicyDecision, RotaEvent } from '@rota/shared-types';
-import { protocolWatcherAgentConfig } from './agent.config';
+import { protocolWatcherAgentConfig } from "./agent.config";
 
-export const watcherPolicies = {
-  validateAction(action: string): PolicyDecision {
-    if (protocolWatcherAgentConfig.forbiddenActions.includes(action)) {
-      return {
-        allowed: false,
-        reason: `Ação proibida para o Protocol Watcher Agent: ${action}`,
-        requiresHumanApproval: false,
-        action
-      };
-    }
-    
+export function validateProtocolWatcherAction(action: string) {
+  if (protocolWatcherAgentConfig.forbiddenActions.includes(action)) {
     return {
-      allowed: true,
-      reason: 'Ação de observação e relatório permitida.',
-      requiresHumanApproval: false, // Observação não requer aprovação, pois não altera estado real
-      action
+      allowed: false,
+      reason: "forbidden_action",
     };
   }
-};
+
+  if (!protocolWatcherAgentConfig.allowedActions.includes(action)) {
+    return {
+      allowed: false,
+      reason: "unknown_or_unapproved_action",
+    };
+  }
+
+  return {
+    allowed: true,
+    reason: "ok",
+  };
+}
+
+export function requiresHumanApproval(action: string): boolean {
+  return [
+    "publish_external_content",
+    "change_protocol_logic",
+    "modify_smart_contracts",
+    "change_pricing",
+  ].includes(action);
+}
+
+export function canWritePath(path: string): boolean {
+  return protocolWatcherAgentConfig.ownedPaths.some((owned) =>
+    path.startsWith(owned)
+  );
+}

@@ -7,16 +7,17 @@ datasource db {
   url      = env("DATABASE_URL") 
 } 
 
-enum AgentStatus { 
-  ACTIVE 
-  SUSPENDED 
-  BANNED 
+enum AgentStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
 } 
 
-enum PriceMode { 
-  FIXED 
-  RFQ 
-  USAGE_TIERED 
+enum PriceMode {
+  FREE
+  PAID_PER_EXECUTION
+  RFQ
+  USAGE_TIERED
 } 
 
 enum IntentStatus { 
@@ -113,13 +114,38 @@ enum WorkforceAgentKind {
   TRUST_REPUTATION 
 } 
 
-enum ExecutionStatus { 
-  RECEIVED 
-  DISPATCHED 
-  COMPLETED 
-  SKIPPED 
-  BLOCKED 
+enum ExecutionStatus {
+  RECEIVED
+  DISPATCHED
+  COMPLETED
+  SKIPPED
+  BLOCKED
+  FAILED
+}
+
+enum PaymentExecutionStatus { 
+  INITIATED 
+  PAYMENT_REQUIRED 
+  PAYMENT_VERIFIED 
+  EXECUTED 
   FAILED 
+  CANCELLED 
+} 
+
+enum RevenueEventType { 
+  PAYMENT_CAPTURED 
+  EXECUTION_CHARGED 
+  ESCROW_LOCKED 
+  ESCROW_SETTLED 
+  SLASH_APPLIED 
+  REFUND_ISSUED 
+} 
+
+enum MetricWindow { 
+  HOURLY 
+  DAILY 
+  WEEKLY 
+  MONTHLY 
 } 
 
 model Agent { 
@@ -127,7 +153,7 @@ model Agent {
   walletAddress    String      @unique 
   displayName      String? 
   status           AgentStatus @default(ACTIVE) 
-  reputationScore  Int         @default(0) 
+  reputationScore  Int         @default(100) 
   totalExecutions  Int         @default(0) 
   totalSuccesses   Int         @default(0) 
   totalDisputes    Int         @default(0) 
@@ -144,6 +170,9 @@ model Agent {
   escrowsAsSeller      EscrowTransaction[]  @relation("SellerEscrows") 
   proofSubmissions     ProofSubmission[]    @relation("SellerProofs") 
   reputationEvents     ReputationEvent[] 
+
+  buyerPaymentExecutions  PaymentExecutionLog[] @relation("BuyerPaymentExecutions") 
+  sellerPaymentExecutions PaymentExecutionLog[] @relation("SellerPaymentExecutions") 
 
   @@index([status, reputationScore]) 
 } 
@@ -169,6 +198,9 @@ model Skill {
   agent   Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade) 
   intents Intent[] 
   bids    Bid[] 
+  paymentExecutionLogs PaymentExecutionLog[] 
+  revenueEvents        RevenueEvent[] 
+  usageMetrics         SkillUsageMetric[] 
 
   @@index([agentId, isActive]) 
   @@index([category, isActive]) 
@@ -198,6 +230,8 @@ model Intent {
   selectedBid Bid?               @relation("SelectedBid", fields: [selectedBidId], references: [id]) 
   escrow      EscrowTransaction? 
   proofs      ProofSubmission[] 
+  paymentExecutionLogs PaymentExecutionLog[] 
+  revenueEvents        RevenueEvent[] 
 
   @@index([buyerAgentId, status]) 
   @@index([skillId, status]) 
@@ -278,6 +312,8 @@ model EscrowTransaction {
   buyerAgent    Agent             @relation("BuyerEscrows", fields: [buyerAgentId], references: [id], onDelete: Restrict) 
   sellerAgent   Agent             @relation("SellerEscrows", fields: [sellerAgentId], references: [id], onDelete: Restrict) 
   proofSubmissions ProofSubmission[] 
+  paymentExecutionLogs PaymentExecutionLog[] 
+  revenueEvents        RevenueEvent[] 
 
   @@index([status, createdAt]) 
   @@index([buyerAgentId, sellerAgentId]) 
@@ -355,11 +391,120 @@ model AgentExecutionLog {
   decision       String? 
   input          Json? 
   output         Json? 
-  error          Json? 
-  latencyMs      Int? 
-  createdAt      DateTime          @default(now()) 
+  error          Json?
+  latencyMs      Int?
+  createdAt      DateTime          @default(now())
 
-  @@index([workforceAgent, createdAt]) 
-  @@index([eventId]) 
-  @@index([status, createdAt]) 
+  @@index([workforceAgent, createdAt])
+  @@index([eventId])
+  @@index([status, createdAt])
+}
+
+model ContractEventCheckpoint {
+  id            String   @id @default(cuid())
+  contractId    String
+  eventType     String?
+  lastLedger    Int
+  lastCursor    String?
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+
+  @@index([contractId, eventType])
+}
+
+model PaymentExecutionLog { 
+  id                    String                 @id @default(cuid()) 
+  skillId               String 
+  buyerAgentId          String? 
+  sellerAgentId         String? 
+  paymentExecutionStatus PaymentExecutionStatus @default(INITIATED) 
+
+  paymentMode           PriceMode 
+  paymentAssetCode      String                 @default("USDC") 
+  paymentAssetIssuer    String? 
+  amountCharged         Decimal?               @db.Decimal(20, 7) 
+
+  x402TokenRef          String? 
+  x402VerificationRef   String? 
+  escrowTransactionId   String? 
+  intentId              String? 
+
+  requestPayload        Json? 
+  responsePayload       Json? 
+  errorPayload          Json? 
+
+  executionLatencyMs    Int? 
+  correlationId         String? 
+  createdAt             DateTime               @default(now()) 
+  updatedAt             DateTime               @updatedAt 
+
+  skill              Skill               @relation(fields: [skillId], references: [id], onDelete: Restrict) 
+  buyerAgent         Agent?              @relation("BuyerPaymentExecutions", fields: [buyerAgentId], references: [id], onDelete: SetNull) 
+  sellerAgent        Agent?              @relation("SellerPaymentExecutions", fields: [sellerAgentId], references: [id], onDelete: SetNull) 
+  escrowTransaction  EscrowTransaction?  @relation(fields: [escrowTransactionId], references: [id], onDelete: SetNull) 
+  intent             Intent?             @relation(fields: [intentId], references: [id], onDelete: SetNull) 
+  revenueEvents      RevenueEvent[] 
+
+  @@index([skillId, createdAt]) 
+  @@index([paymentExecutionStatus, createdAt]) 
+  @@index([buyerAgentId, createdAt]) 
+  @@index([correlationId]) 
+} 
+
+model RevenueEvent { 
+  id                     String            @id @default(cuid()) 
+  type                   RevenueEventType 
+  skillId                String? 
+  paymentExecutionLogId  String? 
+  escrowTransactionId    String? 
+  intentId               String? 
+
+  assetCode              String            @default("USDC") 
+  assetIssuer            String? 
+  grossAmount            Decimal           @db.Decimal(20, 7) 
+  protocolFeeAmount      Decimal?          @db.Decimal(20, 7) 
+  providerAmount         Decimal?          @db.Decimal(20, 7) 
+  netAmount              Decimal?          @db.Decimal(20, 7) 
+
+  txHash                 String? 
+  metadata               Json? 
+  occurredAt             DateTime          @default(now()) 
+  createdAt              DateTime          @default(now()) 
+
+  skill               Skill?               @relation(fields: [skillId], references: [id], onDelete: SetNull) 
+  paymentExecutionLog PaymentExecutionLog? @relation(fields: [paymentExecutionLogId], references: [id], onDelete: SetNull) 
+  escrowTransaction   EscrowTransaction?   @relation(fields: [escrowTransactionId], references: [id], onDelete: SetNull) 
+  intent              Intent?              @relation(fields: [intentId], references: [id], onDelete: SetNull) 
+
+  @@index([type, occurredAt]) 
+  @@index([skillId, occurredAt]) 
+  @@index([txHash]) 
+} 
+
+model SkillUsageMetric { 
+  id                    String       @id @default(cuid()) 
+  skillId               String 
+  window                MetricWindow 
+  windowStart           DateTime 
+  windowEnd             DateTime 
+
+  totalExecutions       Int          @default(0) 
+  successfulExecutions  Int          @default(0) 
+  failedExecutions      Int          @default(0) 
+
+  paidExecutions        Int          @default(0) 
+  freeExecutions        Int          @default(0) 
+
+  grossRevenue          Decimal      @default(0) @db.Decimal(20, 7) 
+  protocolRevenue       Decimal      @default(0) @db.Decimal(20, 7) 
+  providerRevenue       Decimal      @default(0) @db.Decimal(20, 7) 
+
+  avgExecutionLatencyMs Int? 
+  updatedAt             DateTime     @updatedAt 
+  createdAt             DateTime     @default(now()) 
+
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade) 
+
+  @@unique([skillId, window, windowStart, windowEnd]) 
+  @@index([window, windowStart]) 
 }
