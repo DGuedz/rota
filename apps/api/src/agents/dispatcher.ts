@@ -4,6 +4,7 @@ import { runRouter } from '@rota/agents/router-agent/run';
 import { runDistributionAgent } from '@rota/agents/github-distribution-agent/run';
 import { runSkillPublisherAgent } from '@rota/agents/skill-publisher-agent/run';
 import { runTrustReputationAgent } from '@rota/agents/trust-reputation-agent/run';
+import { runProtocolWatcherAgent } from '@rota/agents/protocol-watcher-agent/run';
 import { ReputationService } from '../reputation/reputation.service';
 import { RotaEvent } from '@rota/shared-types';
 import { WorkforceAgentKind, ExecutionStatus, EventSource, PrismaClient } from '@prisma/client';
@@ -146,6 +147,33 @@ export class AgentDispatcher {
               input: { payload: domainEvent.payload },
               output: { trustResult },
               latencyMs: trustLatency,
+            });
+          } catch(e) {
+             // ignore DB
+          }
+        } else if (result.targetAgent === 'protocol-watcher-agent') {
+          console.log(`[AgentDispatcher] Executing Protocol Watcher Agent for event ${domainEvent.eventId}`);
+          const watcherStartTime = Date.now();
+
+          const watcherResult = await runProtocolWatcherAgent(rotaEvent);
+
+          if (watcherResult.status === "COMPLETED" && watcherResult.classifiedImpact) {
+            console.log(`[AgentDispatcher] Protocol Observation created: Area ${watcherResult.classifiedImpact.area} | Urgency: ${watcherResult.classifiedImpact.urgency}`);
+          }
+
+          const watcherLatency = Date.now() - watcherStartTime;
+
+          try {
+            await this.logService.logExecution({
+              agent: 'PROTOCOL_WATCHER' as WorkforceAgentKind,
+              eventId: domainEvent.eventId,
+              source: domainEvent.source as EventSource,
+              eventType: domainEvent.type,
+              status: watcherResult.status === 'COMPLETED' ? ('SUCCESS' as ExecutionStatus) : watcherResult.status === 'SKIPPED' ? ('SKIPPED' as ExecutionStatus) : ('FAILED' as ExecutionStatus),
+              decision: watcherResult.decision,
+              input: { payload: domainEvent.payload },
+              output: { watcherResult },
+              latencyMs: watcherLatency,
             });
           } catch(e) {
              // ignore DB

@@ -1,78 +1,108 @@
-import { RotaEvent, ExecutionResult, AgentAction } from '@rota/shared-types';
-import { StructuredLogger } from '../shared/structured-logger';
-import { getRequiredAction } from './triggers';
-import { watcherPolicies } from './policies';
-import { protocolWatcherAgentConfig } from './agent.config';
+import {
+  protocolWatcherTriggers,
+  ProtocolWatcherTrigger,
+} from "./triggers";
+import { validateProtocolWatcherAction } from "./policies";
+import { classifyObservation, ClassifiedImpact } from "./watch.classifier";
 
-const logger = new StructuredLogger(protocolWatcherAgentConfig.id);
+export type ProtocolWatcherEvent = {
+  eventId: string;
+  source: string;
+  type: string;
+  payload: Record<string, unknown>;
+  timestamp: string;
+};
 
-export async function runWatcherAgent(event: RotaEvent): Promise<ExecutionResult> {
-  logger.info(event.eventId, 'receive_event', `Iniciando análise de evento de protocolo: ${event.type}`);
-  
-  try {
-    const requiredAction = getRequiredAction(event);
-    if (!requiredAction) {
-      return {
-        success: false,
-        actionsPerformed: [],
-        generatedArtifacts: [],
-        reason: 'Evento de protocolo não suportado ou irrelevante.'
-      };
+export type ProtocolObservation = {
+  source: string;
+  topic: string;
+  title: string;
+  summary: string;
+  recommendedAction: string;
+  rawPayload: Record<string, unknown>;
+};
+
+export type ProtocolWatcherResult = {
+  status: "COMPLETED" | "SKIPPED" | "FAILED";
+  decision: string;
+  observation?: ProtocolObservation;
+  classifiedImpact?: ClassifiedImpact;
+  notes?: string[];
+};
+
+function extractString(
+  payload: Record<string, unknown>,
+  keys: string[],
+  fallback: string
+): string {
+  for (const key of keys) {
+    const value = payload[key];
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value.trim();
     }
+  }
+  return fallback;
+}
 
-    const policyDecision = watcherPolicies.validateAction('summarize_changes');
-    if (!policyDecision.allowed) {
-      logger.warn(event.eventId, 'summarize_changes', policyDecision.reason);
-      return {
-        success: false,
-        actionsPerformed: [],
-        generatedArtifacts: [],
-        reason: policyDecision.reason
-      };
-    }
+export async function runProtocolWatcherAgent(
+  event: ProtocolWatcherEvent
+): Promise<ProtocolWatcherResult> {
+  const trigger = protocolWatcherTriggers[event.type as ProtocolWatcherTrigger];
 
-    const performedActions: AgentAction[] = [];
-    const generatedArtifacts: string[] = [];
-
-    // Mocking analysis
-    const impactClassification = event.payload.impact || 'low';
-    
-    performedActions.push({
-      actionId: `act_${Date.now()}_1`,
-      agentId: protocolWatcherAgentConfig.id,
-      type: 'summarize_changes',
-      payload: { summary: `Update detected on ${event.source}: ${event.type}`, impact: impactClassification },
-      status: 'success'
-    });
-    
-    performedActions.push({
-      actionId: `act_${Date.now()}_2`,
-      agentId: protocolWatcherAgentConfig.id,
-      type: 'open_internal_issue',
-      payload: { title: `[Watcher] Review impact of ${event.type}`, impact: impactClassification },
-      status: 'success'
-    });
-    
-    generatedArtifacts.push('WATCHER_REPORT_DRAFT');
-    generatedArtifacts.push('GITHUB_ISSUE_PAYLOAD');
-
-    logger.info(event.eventId, requiredAction, 'Análise de protocolo concluída com sucesso', { artifacts: generatedArtifacts, impact: impactClassification });
-
+  if (!trigger) {
     return {
-      success: true,
-      actionsPerformed: performedActions,
-      generatedArtifacts,
-      reason: 'Protocol watched and issue mapped successfully.'
-    };
-    
-  } catch (error: any) {
-    logger.error(event.eventId, 'execution_error', error.message);
-    return {
-      success: false,
-      actionsPerformed: [],
-      generatedArtifacts: [],
-      error: error.message,
-      reason: 'Erro interno durante análise de protocolo.'
+      status: "SKIPPED",
+      decision: "unsupported_event_for_protocol_watcher",
+      notes: [`Event ${event.type} is not handled by protocol-watcher-agent`],
     };
   }
+
+  const actionCheck = validateProtocolWatcherAction("observe_protocol_update");
+  if (!actionCheck.allowed) {
+    return {
+      status: "FAILED",
+      decision: actionCheck.reason,
+      notes: ["Protocol watcher blocked by policy"],
+    };
+  }
+
+  const title = extractString(
+    event.payload,
+    ["title", "headline", "name"],
+    `${trigger.source} update detected`
+  );
+
+  const summary = extractString(
+    event.payload,
+    ["summary", "description", "body", "message"],
+    trigger.description
+  );
+
+  const recommendedAction =
+    trigger.source === "SECURITY"
+      ? "open_internal_issue_and_review_immediately"
+      : "review_and_classify_impact";
+
+  const observation: ProtocolObservation = {
+    source: trigger.source,
+    topic: trigger.topic,
+    title,
+    summary,
+    recommendedAction,
+    rawPayload: event.payload,
+  };
+
+  const classifiedImpact = classifyObservation(observation);
+
+  return {
+    status: "COMPLETED",
+    decision: "protocol_observation_created",
+    observation,
+    classifiedImpact,
+    notes: [
+      `Observation created for ${trigger.source}`,
+      `Recommended action: ${recommendedAction}`,
+      `Impact Area: ${classifiedImpact.area} | Urgency: ${classifiedImpact.urgency}`,
+    ],
+  };
 }

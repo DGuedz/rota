@@ -69,5 +69,16 @@ export function resolveTrigger(event: RotaEvent): TriggerDefinition | undefined 
     };
   }
 
+  // Triggers do Protocol Watcher Agent
+  if (event.type.startsWith('protocol.')) {
+    return {
+      eventName: event.type,
+      source: event.source,
+      targetAgent: 'protocol-watcher-agent',
+      debounceMs: 3600000,
+      retryStrategy: 'drop'
+    };
+  }
+
   return supportedTriggers.find(t => t.eventName === event.type && t.source === event.source);
 }
