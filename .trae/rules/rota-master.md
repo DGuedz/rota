@@ -141,6 +141,9 @@ Always separate:
 
 Every meaningful implementation must update docs.
 
+**CRITICAL TOKEN OPTIMIZATION RULE:** 
+**NEVER use emojis or decorative unicode characters in any documentation (READMEs, .md files, descriptions).** Emojis inflate LLM token context windows and drive up operational costs for autonomous agents reading the repo. Documentation must be strictly technical, text-based, and focused purely on content density.
+
 Minimum docs per meaningful change:
 - what was built
 - why it exists
