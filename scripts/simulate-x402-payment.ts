@@ -11,7 +11,7 @@ async function main() {
 
   // Para o hackathon, vamos gerar um XDR assinado manualmente e enviar como token x402
   const networkPassphrase = StellarSdk.Networks.TESTNET;
-  const rotaRecipient = 'GAXG4275E6U4F25QXYUHQFIVXG2H2IINQYQY7WYZ7HHTH2P3PXXMZZZZ'; // Mock ROTA Treasury
+  const rotaRecipient = StellarSdk.Keypair.random().publicKey(); // Mock ROTA Treasury
 
   console.log(`[2] Building x402 Transaction Envelope (Payment of 0.05 XLM)...`);
   
