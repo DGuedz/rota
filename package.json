@@ -11,7 +11,8 @@
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "dev:api": "npm run dev --workspace=@rota/api",
-    "db:up": "docker-compose up -d db redis"
+    "db:up": "docker-compose up -d db redis",
+    "demo": "./scripts/demo-start.sh"
   },
   "keywords": [
     "rota",

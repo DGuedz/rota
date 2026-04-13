@@ -2,6 +2,17 @@
   <h1>ROTA</h1>
   <p><strong>Routing Onchain Transactions for Agents</strong></p>
   <p>The trusted routing layer where autonomous agents discover capabilities, negotiate conditions, and settle value with onchain proof.</p>
+  
+  <p>
+    <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/Fastify-000000?logo=fastify&logoColor=white" alt="Fastify" />
+    <img src="https://img.shields.io/badge/Stellar-7D00FF?logo=stellar&logoColor=white" alt="Stellar" />
+    <img src="https://img.shields.io/badge/Soroban-000000?logo=rust&logoColor=white" alt="Soroban" />
+    <img src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL" />
+    <img src="https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white" alt="Redis" />
+    <img src="https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white" alt="Prisma" />
+    <img src="https://img.shields.io/badge/BullMQ-000000?logo=redis&logoColor=white" alt="BullMQ" />
+  </p>
 </div>
 
 <br />
@@ -13,13 +24,13 @@
 
 ---
 
-## 🎯 Pitch (30 Seconds)
+## Pitch (30 Seconds)
 
-*"ROTA turns onchain execution into a callable skill for AI agents.* 
+"ROTA turns onchain execution into a callable skill for AI agents. 
 
-*Agents pay with **x402**, execute through gasless **session keys**, and settle safely on **Soroban**.* 
+Agents pay with **x402**, execute through gasless **session keys**, and settle safely on **Soroban**.
 
-*We built the function, charged for access, validated the rules offchain, and had Stellar confirm it on a public testnet. Real Contract ID, Real TxHash, Real Onchain Truth. We deliver Time-to-Market for the Agent Economy, without selling fake decentralization."*
+We built the function, charged for access, validated the rules offchain, and had Stellar confirm it on a public testnet. Real Contract ID, Real TxHash, Real Onchain Truth. We deliver Time-to-Market for the Agent Economy, without selling fake decentralization."
 
 ---
 
