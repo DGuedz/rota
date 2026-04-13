@@ -29,6 +29,7 @@ const contract_events_service_1 = require("./contracts/contract-events.service")
 const contract_events_indexer_1 = require("./contracts/contract-events.indexer");
 const metrics_routes_1 = require("./accounting/metrics.routes");
 const reputation_routes_1 = require("./reputation/reputation.routes");
+const auditor_routes_1 = require("./agents/auditor.routes");
 // Carregar variáveis de ambiente
 dotenv_1.default.config({ path: '../../.env' });
 const app = (0, fastify_1.default)({
@@ -63,6 +64,7 @@ app.register(rfq_routes_1.rfqRoutes, { prefix: '/rfq', rfqService, bidService })
 app.register(escrow_routes_1.escrowRoutes, { prefix: '/escrow', escrowService });
 app.register(x402_routes_1.x402Routes, { prefix: '/payments' });
 app.register(metrics_routes_1.metricsRoutes, { prefix: '/telemetry', prisma });
+app.register(auditor_routes_1.auditorRoutes, { prefix: '/agents/auditor', prisma });
 // Reputação
 (0, reputation_routes_1.registerReputationRoutes)(app, { prisma });
 // Conecta o Dispatcher ao barramento de eventos

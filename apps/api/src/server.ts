@@ -1,7 +1,10 @@
 import Fastify from 'fastify';
 import dotenv from 'dotenv';
+// Carregar variáveis de ambiente antes de qualquer outro import
+dotenv.config({ path: '../../.env' });
+
 import Redis from 'ioredis';
-import { PrismaClient, EventSource } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { DomainEventService } from './events/domain-event.service';
 import { ExecutionLogService } from './execution-logs/execution-log.service';
 import { RotaEventBus } from './events/event-bus';
@@ -25,9 +28,7 @@ import { ContractEventsIndexer } from './contracts/contract-events.indexer';
 import { metricsRoutes } from './accounting/metrics.routes';
 import { registerReputationRoutes } from './reputation/reputation.routes';
 import { auditorRoutes } from './agents/auditor.routes';
-
-// Carregar variáveis de ambiente
-dotenv.config({ path: '../../.env' });
+import { skillRoutes } from './skills/skills.routes';
 
 const app = Fastify({
   logger: true
@@ -68,6 +69,7 @@ app.register(rfqRoutes, { prefix: '/rfq', rfqService, bidService });
   app.register(x402Routes, { prefix: '/payments' });
   app.register(metricsRoutes, { prefix: '/telemetry', prisma });
   app.register(auditorRoutes, { prefix: '/agents/auditor', prisma });
+  app.register(skillRoutes, { prefix: '/api/skills', prisma });
 
   // Reputação
   registerReputationRoutes(app, { prisma });

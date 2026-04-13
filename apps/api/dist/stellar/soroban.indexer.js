@@ -8,8 +8,10 @@ class SorobanIndexer {
     lastLedgerChecked = 0;
     cursor;
     intervalId;
+    stellarClient;
     constructor(eventBus) {
         this.eventBus = eventBus;
+        this.stellarClient = new stellar_client_1.StellarClient();
     }
     start() {
         if (this.isRunning)
@@ -32,7 +34,7 @@ class SorobanIndexer {
                 filters: [
                     {
                         type: 'contract',
-                        contractIds: [stellar_client_1.stellarClient.contractId],
+                        contractIds: [this.stellarClient.contractId],
                         topics: [] // Opcionalmente filtrar pelos tópicos
                     }
                 ],
@@ -46,11 +48,11 @@ class SorobanIndexer {
             }
             else {
                 // Se for a primeira vez, busca os últimos eventos pedindo pra rede o ledger mais recente
-                const latestLedger = await stellar_client_1.stellarClient.server.getLatestLedger();
+                const latestLedger = await this.stellarClient.server.getLatestLedger();
                 this.lastLedgerChecked = latestLedger.sequence;
                 requestParams.startLedger = this.lastLedgerChecked;
             }
-            const eventsResponse = await stellar_client_1.stellarClient.server.getEvents(requestParams);
+            const eventsResponse = await this.stellarClient.server.getEvents(requestParams);
             if (!eventsResponse || !eventsResponse.events) {
                 return;
             }
@@ -64,7 +66,7 @@ class SorobanIndexer {
                 if (topicName === 'escrow.settled' || topicName === 'escrow.slashed') {
                     console.log(`[SorobanIndexer] Detected ${topicName} event onchain! Emitting to EventBus...`);
                     await this.eventBus.publish('SMART_CONTRACT', topicName, {
-                        contractId: stellar_client_1.stellarClient.contractId,
+                        contractId: this.stellarClient.contractId,
                         ledger: event.ledger,
                         txHash: event.txHash,
                         rawEvent: event,

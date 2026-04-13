@@ -4,11 +4,33 @@ import { SkillMonetizationPolicy } from './skill-pricing.service';
 import { walletRiskCheckService } from './wallet-risk-check.service';
 import { ProofVerifierService } from './proof-verifier.service';
 import { AccountingService } from '../accounting/accounting.service';
+import { AgentEscrowInitSkill } from './agent-escrow-init.service';
+import { StellarClient } from '../stellar/stellar.client';
+import { WalletAbstractionService } from '../stellar/wallet/wallet-abstraction.service';
+import { x402Middleware } from '../payments/x402.middleware';
 
 export async function skillRoutes(fastify: FastifyInstance, options: { prisma: PrismaClient }) {
   const { prisma } = options;
   const accountingService = new AccountingService(prisma);
   const proofVerifierService = new ProofVerifierService(prisma);
+  const stellarClient = new StellarClient();
+  const walletAbstraction = new WalletAbstractionService(stellarClient);
+  const goldenSkill = new AgentEscrowInitSkill(stellarClient, walletAbstraction);
+
+  /**
+   * Golden Skill: Inicialização Agentic de Escrow (Gasless)
+   * Demonstra a Wallet Abstraction + x402 + Soroban
+   */
+  fastify.post('/agent-escrow-init', { preHandler: [x402Middleware] }, async (request: any, reply) => {
+    try {
+      const intent = request.body;
+      const result = await goldenSkill.execute(intent);
+      return reply.send(result);
+    } catch (error: any) {
+      request.log.error(`Golden Skill execution failed: ${error.message}`);
+      return reply.status(500).send({ error: error.message });
+    }
+  });
 
   /**
    * Catálogo Público de Skills (com filtros de monetização)

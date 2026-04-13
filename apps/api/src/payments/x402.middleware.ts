@@ -1,9 +1,14 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { X402_CONSTANTS } from './x402.constants';
 import { X402VerificationResult } from './x402.types';
+import { X402Service, StellarX402VerificationProvider } from './x402.service';
+import { StellarClient } from '../stellar/stellar.client';
+import { getX402Config } from './x402.config';
 
-// Inject service via factory or global instance
-import { x402Service } from './x402.service'; 
+// Instanciar o StellarClient e o X402Service globalmente para o middleware
+const stellarClient = new StellarClient();
+const x402Config = getX402Config();
+const x402Service = new X402Service(new StellarX402VerificationProvider(stellarClient, x402Config)); 
 
 /**
  * Interface customizada que as rotas pagas podem declarar.

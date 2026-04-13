@@ -5,6 +5,7 @@ export declare class SorobanIndexer {
     private lastLedgerChecked;
     private cursor?;
     private intervalId?;
+    private stellarClient;
     constructor(eventBus: RotaEventBus);
     start(): void;
     stop(): void;

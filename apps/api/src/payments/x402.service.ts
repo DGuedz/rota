@@ -1,5 +1,7 @@
 import { X402EnvironmentConfig, getX402Config } from './x402.config';
 import { X402PaymentRequirement, X402VerificationResult } from './x402.types';
+import * as StellarSdk from '@stellar/stellar-sdk';
+import { StellarClient } from '../stellar/stellar.client';
 
 export interface X402VerificationOptions {
   priceOverride?: string;
@@ -14,7 +16,7 @@ export interface X402VerificationProvider {
   verify(token: string, options: X402VerificationOptions): Promise<X402VerificationResult>;
 }
 
-export class X402Service {
+class X402Service {
   private config: X402EnvironmentConfig;
 
   constructor(private verificationProvider: X402VerificationProvider) {
@@ -63,6 +65,82 @@ export class X402Service {
 }
 
 /**
+ * Implementação Real: StellarX402VerificationProvider.
+ * Valida o token x402 (XDR de transação Stellar) na rede Stellar.
+ */
+class StellarX402VerificationProvider implements X402VerificationProvider {
+  constructor(private stellarClient: StellarClient, private config: X402EnvironmentConfig) {}
+
+  async verify(token: string, options: X402VerificationOptions): Promise<X402VerificationResult> {
+    try {
+      // 1. Decodificar o token (XDR)
+      const transaction = StellarSdk.TransactionBuilder.fromXDR(token, this.config.networkPassphrase);
+
+      // 2. Verificar a assinatura (a transação já deve ter sido assinada pelo pagador)
+      if (!transaction.signatures || transaction.signatures.length === 0) {
+        return { isValid: false, errorReason: 'Transaction not signed' };
+      }
+
+      // 3. Validar o conteúdo da transação (asset, amount, destination)
+      const paymentOperation = transaction.operations.find(
+        (op): op is StellarSdk.Operation.Payment => op.type === 'payment'
+      );
+
+      if (!paymentOperation) {
+        return { isValid: false, errorReason: 'No payment operation found in transaction' };
+      }
+
+      const requiredAmount = options.priceOverride || this.config.defaultAmount;
+      const requiredAssetCode = this.config.assetCode;
+      const requiredAssetIssuer = this.config.assetIssuer;
+      const requiredRecipientAddress = this.config.recipientAddress;
+
+      // Validação do destinatário
+      if (paymentOperation.destination !== requiredRecipientAddress) {
+        return { isValid: false, errorReason: 'Incorrect payment recipient' };
+      }
+
+      // Validação do valor
+      if (parseFloat(paymentOperation.amount) < parseFloat(requiredAmount)) {
+        return { isValid: false, errorReason: `Insufficient amount paid. Required: ${requiredAmount}, Paid: ${paymentOperation.amount}` };
+      }
+
+      // Validação do ativo
+      let isAssetValid = false;
+      if (paymentOperation.asset.isNative()) {
+        // Se o ativo for nativo (XLM), não há issuer
+        isAssetValid = requiredAssetCode === 'XLM';
+      } else if (paymentOperation.asset instanceof StellarSdk.Asset) {
+        // Para ativos não nativos, verificar código e issuer
+        isAssetValid = paymentOperation.asset.code === requiredAssetCode &&
+                       paymentOperation.asset.issuer === requiredAssetIssuer;
+      }
+
+      if (!isAssetValid) {
+        return { isValid: false, errorReason: 'Incorrect asset paid' };
+      }
+
+      // 4. Opcionalmente, consultar o status da transação na rede
+      // Para o MVP, vamos considerar que a transação é válida se o XDR for bem formado e assinado
+      // A verificação de que a transação foi de fato submetida e liquidada pode ser um passo futuro
+      // const txStatus = await this.stellarClient.getTransactionStatus(transaction.hash().toString('hex'));
+      // if (txStatus.status !== 'SUCCESS') {
+      //   return { isValid: false, errorReason: `Transaction not settled on chain: ${txStatus.status}` };
+      // }
+
+      return {
+        isValid: true,
+        paymentHash: transaction.hash().toString('hex'),
+        amountPaid: paymentOperation.amount,
+      };
+    } catch (error: any) {
+      console.error(`[StellarX402VerificationProvider] Error verifying token:`, error);
+      return { isValid: false, errorReason: `Invalid X402 token format or verification error: ${error.message}` };
+    }
+  }
+}
+
+/**
  * Implementação Inicial: MockProvider.
  * Ele aceita a string "MOCK_TOKEN_SUCCESS" para simular a prova matemática do pagamento.
  */
@@ -86,5 +164,5 @@ class MockVerificationProvider implements X402VerificationProvider {
   }
 }
 
-// Exportar uma instância global Singleton
-export const x402Service = new X402Service(new MockVerificationProvider());
+// Exportar as classes para que possam ser instanciadas e configuradas em tempo de execução
+export { X402Service, StellarX402VerificationProvider, MockVerificationProvider };

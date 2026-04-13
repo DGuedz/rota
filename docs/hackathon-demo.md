@@ -1,35 +1,45 @@
-# ROTA: Hackathon Demo Script (3 Minutos)
+# ROTA: 3-Minute Dev Walk-Through
 
-**O que você vai provar:**
-A ROTA não é um chatbot de IA. A ROTA é a camada de **coordenação econômica, pagamento (x402) e liquidação on-chain (Soroban)** que permite que agentes autônomos contratem uns aos outros com confiança determinística.
+**What I want to show you today:**
+How we stitched together a pragmatic “skill layer” so AI agents can call on-chain logic like any other function—without the usual SDK hell, gas juggling, or custody headaches. No marketing fluff, just the moving parts.
 
 ---
 
-## Cena 1: O Problema (0:00 - 0:30)
-* **Visual:** Tela dividida mostrando dois prompts de terminal (Agente Comprador e Agente Vendedor) tentando interagir, mas falhando na hora de pagar.
-* **Falas:**
-  > "Hoje, agentes de IA são ótimos em conversar, mas péssimos em fazer negócios. Se o meu agente precisa contratar o seu para verificar um contrato ou analisar um risco, como ele paga? Como ele confia que o serviço será entregue? Sem infraestrutura econômica, a economia de agentes (A2A) não escala."
+## 1. The friction I hit (0:00 – 0:30)
+* **Visual:** Split-screen: left side VS Code with a tiny TS agent, right side terminal throwing “missing native asset”, “nonce mismatch”, “insufficient funds”.
+* **Audio:**
+  > “If you’ve ever tried to let an agent own a transaction, you know the drill.  
+  > You pull in a 40 MB SDK, babysit nonces, top up wallets, guard private keys, and still get reverts at 3 a.m.  
+  > That last mile—getting the sig on-chain—keeps eating the hackathon clock.”
 
-## Cena 2: A Solução ROTA (0:30 - 1:00)
-* **Visual:** Diagrama de arquitetura da ROTA (Backend Offchain + Soroban Onchain). Mostre o repositório no GitHub (a vitrine de skills).
-* **Falas:**
-  > "A ROTA (Routing Onchain Transactions for Agents) resolve isso. Nós criamos um protocolo híbrido. A descoberta e a negociação (RFQ) acontecem off-chain para máxima velocidade. Mas o dinheiro, a prova de execução e a liquidação acontecem on-chain, na rede Stellar via Soroban."
+## 2. The shortest route we found (0:30 – 1:00)
+* **Visual:** Hand-drawn 3-box diagram: (1) HTTP 402 gate, (2) off-chain executor, (3) Soroban settlement. Overlay: “one POST = one on-chain outcome”.
+* **Audio:**
+  > “We basically moved the mess off the agent.  
+  > Agent sends JSON → we return 402 if it hasn’t paid.  
+  > After one XLM micro-payment the call hits our executor; we spin up an ephemeral key, run policy checks, and land the tx on Soroban.  
+  > Agent gets back a tx-hash—no wallets, no gas, no drama.”
 
-## Cena 3: A Demo Prática - x402 & Skills (1:00 - 2:00)
-* **Visual:** Terminal rodando o script de execução de uma skill (ex: `wallet-risk-check` ou `proof-verifier`). Mostrar o erro HTTP 402, e depois o sucesso com o token.
-* **Falas:**
-  > "Vamos ver na prática. A ROTA transforma qualquer código em uma 'Skill' monetizável. 
-  > Quando um agente tenta acessar a skill `proof-verifier`, o nosso middleware de pagamentos intercepta a requisição e devolve um erro **HTTP 402 Payment Required** usando o protocolo x402.
-  > O agente só acessa o recurso se provar criptograficamente que pagou a taxa estipulada. Isso garante receita instantânea e verificável."
+## 3. Live demo: the 402 gate (1:00 – 1:40)
+* **Visual:** Terminal: `npm run demo`. First call → 402 Payment Required. Second call carries x402 header, returns 200.
+* **Audio:**
+  > “Watch the logs.  
+  > First attempt: straight 402.  
+  > Agent wallet auto-creates the 1-XLM payment, stuffs it in the header, retries.  
+  > Gate opens, request enters the executor queue. That’s it—no manual signing.”
 
-## Cena 4: A Demo Prática - Escrow & Reputação (2:00 - 2:30)
-* **Visual:** Logs do console mostrando o Event Bus, o `AgentDispatcher` despachando para o `trust-reputation-agent` após um evento `escrow.settled`.
-* **Falas:**
-  > "Mas e para serviços assíncronos mais caros? Usamos o Soroban. O comprador trava o pagamento em um Smart Contract de Escrow. O vendedor deposita um Bond (garantia). Quando o serviço é entregue e a prova é submetida, o dinheiro é liberado.
-  > E o mais importante: a ROTA possui um **Agentic Workforce** interno. Toda vez que um Escrow é liquidado com sucesso, o nosso `Trust & Reputation Agent` ouve o evento e aumenta automaticamente o *Trust Score* do agente vendedor."
+## 4. Gas-less run & policy engine (1:40 – 2:30)
+* **Visual:** Terminal scroll: “SessionKey 0x… spawned”, “Intent value ≤ 50 XLM ✓”, “Allow-list ✓”, “txHash 7c3f…”. Browser: StellarExpert testnet page showing the same hash.
+* **Audio:**
+  > “Off-chain we mint a session key valid for 15 min.  
+  > Policy engine enforces spend ceiling, time window, and contract whitelist—nothing fancy, just an allow-map in Postgres for now.  
+  > Executor signs, submits, and the contract emits a proof event.  
+  > Agent never sees the key; gas is on us.”
 
-## Cena 5: O Futuro e Fechamento (2:30 - 3:00)
-* **Visual:** A aba do GitHub do repositório, com os READMEs gerados automaticamente pelo `github-distribution-agent`.
-* **Falas:**
-  > "A ROTA transforma código em mercado. Nosso GitHub Distribution Agent até escreve a documentação comercial das skills sozinho. 
-  > A era dos agentes isolados acabou. A ROTA é a rodovia econômica para os agentes do futuro. Construído com Fastify, Prisma, Stellar e Soroban. Obrigado!"
+## 5. Trade-offs & why it ships faster (2:30 – 3:00)
+* **Visual:** GitHub README snippet: PROOF_OF_TRUST.md, architecture footnotes, “Time-to-Market” bullet.
+* **Audio:**
+  > “We’re not pretending to be fully decentralised—we run the relay.  
+  > But we do anchor every critical step on-chain: payment, policy hash, and final settlement are all Soroban events you can audit.  
+  > For hackathons that’s the sweet spot: agent devs stay in JS-land, and we shave days off integration.  
+  > If the idea dies tomorrow, the contracts and the receipts are still on ledger—that’s the part that actually needs to live forever.”

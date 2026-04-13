@@ -1,13 +1,17 @@
-import { stellarClient } from './stellar.client';
+import { StellarClient } from './stellar.client';
 import { RotaEventBus } from '../events/event-bus';
+import * as StellarSdk from '@stellar/stellar-sdk';
 
 export class SorobanIndexer {
   private isRunning = false;
   private lastLedgerChecked = 0;
   private cursor?: string;
   private intervalId?: NodeJS.Timeout;
+  private stellarClient: StellarClient;
 
-  constructor(private eventBus: RotaEventBus) {}
+  constructor(private eventBus: RotaEventBus) {
+    this.stellarClient = new StellarClient();
+  }
 
   start() {
     if (this.isRunning) return;
@@ -31,7 +35,7 @@ export class SorobanIndexer {
         filters: [
           {
             type: 'contract',
-            contractIds: [stellarClient.contractId],
+            contractIds: [this.stellarClient.contractId],
             topics: [] // Opcionalmente filtrar pelos tópicos
           }
         ],
@@ -44,12 +48,12 @@ export class SorobanIndexer {
         requestParams.startLedger = this.lastLedgerChecked;
       } else {
         // Se for a primeira vez, busca os últimos eventos pedindo pra rede o ledger mais recente
-        const latestLedger = await stellarClient.server.getLatestLedger();
+        const latestLedger = await this.stellarClient.server.getLatestLedger();
         this.lastLedgerChecked = latestLedger.sequence;
         requestParams.startLedger = this.lastLedgerChecked;
       }
 
-      const eventsResponse = await stellarClient.server.getEvents(requestParams);
+      const eventsResponse = await this.stellarClient.server.getEvents(requestParams);
 
       if (!eventsResponse || !eventsResponse.events) {
         return;
@@ -64,14 +68,14 @@ export class SorobanIndexer {
         // Tentar decodificar o tópico do evento
         const topicName = this.decodeTopicName(event.topic);
         
-        if (topicName === 'escrow.settled' || topicName === 'escrow.slashed') {
+        if (topicName) {
           console.log(`[SorobanIndexer] Detected ${topicName} event onchain! Emitting to EventBus...`);
           
           await this.eventBus.publish(
             'SMART_CONTRACT' as any,
             topicName,
             {
-              contractId: stellarClient.contractId,
+              contractId: this.stellarClient.contractId,
               ledger: event.ledger,
               txHash: event.txHash,
               rawEvent: event,
@@ -85,13 +89,36 @@ export class SorobanIndexer {
   }
 
   private decodeTopicName(topics: any[]): string | null {
-    if (!topics || topics.length === 0) return null;
-    
+    if (!topics || topics.length < 2) return null; // Espera pelo menos o TOPIC_ESCROW e o tipo de evento
+
     try {
-       // TODO: implementar scValToNative real do @stellar/stellar-sdk
-       return 'escrow.settled'; 
+      // O primeiro tópico é geralmente o "contrato" ou "domínio" (ex: ESCROW)
+      const domainScVal = StellarSdk.xdr.ScVal.fromXDR(topics[0], 'base64');
+      const domain = StellarSdk.scValToNative(domainScVal);
+
+      // O segundo tópico é o nome específico do evento (ex: INIT, SETTLED)
+      const eventScVal = StellarSdk.xdr.ScVal.fromXDR(topics[1], 'base64');
+      const eventName = StellarSdk.scValToNative(eventScVal);
+
+      if (domain === 'ESCROW') {
+        switch (eventName) {
+          case 'INIT': return 'escrow.initialized';
+          case 'BOND': return 'escrow.bonded';
+          case 'PROOF': return 'escrow.proof_submitted';
+          case 'SETTLED': return 'escrow.settled';
+          case 'SLASHED': return 'escrow.slashed';
+          case 'CANCEL': return 'escrow.cancelled';
+          case 'DISPUTED': return 'escrow.disputed';
+          default: return `escrow.${eventName.toLowerCase()}`;
+        }
+      } else if (domain === 'SECURITY' && eventName === 'INTRUSION') {
+        return 'security.intrusion_detected';
+      }
+
+      return null;
     } catch (e) {
-       return null;
+      console.error('[SorobanIndexer] Error decoding event topics:', e);
+      return null;
     }
   }
 }

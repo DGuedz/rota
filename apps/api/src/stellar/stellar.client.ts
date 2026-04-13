@@ -33,4 +33,15 @@ export class StellarClient {
       return { txHash, ledger: 0, status: 'FAILED' };
     }
   }
+
+  /**
+   * Retorna a chave pública da conta Tesouraria (Paymaster) da ROTA
+   */
+  public getTreasuryPublicKey(): string {
+    const secret = process.env.ROTA_TREASURY_SECRET;
+    if (!secret) {
+      throw new Error("ROTA_TREASURY_SECRET is not set in .env");
+    }
+    return StellarSdk.Keypair.fromSecret(secret).publicKey();
+  }
 }
