@@ -1,13 +1,17 @@
-# Pricing & Settlement Policy
-    
-Skill: `proof-verifier`
-Model: `PAID`
+# pricing.md
+This skill is monetized using the x402 protocol via the `PAID_PER_EXECUTION` mode.
 
-## Regras
-- Preço base: **0.50 USDC**
-- Recebedor principal: `GBUYERTESTACCOUNT...`
-- Bond requirement: `Não`
+## Cost
+- **Asset**: USDC
+- **Amount**: 0.05
+- **Mode**: PAID_PER_EXECUTION
 
-### x402 / MPP
-Em modo `paid`, o cliente receberá um `402 Payment Required` com um header `Www-Authenticate: L402...`.
-Você deve obter o token L402 no facilitador (ex: x402-testnet.rota.network) antes de refazer o request com `Authorization: L402 <macaroon>:<preimage>`.
+## Usage Instructions
+When calling the skill endpoint `/skills/proof-verifier/execute`, if no valid x402 payment token is supplied, the server will respond with:
+
+```http
+HTTP/1.1 402 Payment Required
+Www-Authenticate: X402 amount="0.05" asset="USDC"
+```
+
+Provide the cryptographic proof of payment in the `x-rota-payment-token` header.

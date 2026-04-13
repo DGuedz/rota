@@ -1,30 +1,33 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ROTA Skill Schema - proof-verifier",
-  "description": "Verifies Zero-Knowledge proofs for A2A task completion.",
-  "input": {
-    "type": "object",
-    "properties": {
-      "proof": {
-        "type": "string"
-      },
-      "taskId": {
-        "type": "string"
-      }
+  "title": "Proof Verifier Schema",
+  "type": "object",
+  "required": ["proofPayload", "signatures"],
+  "properties": {
+    "proofPayload": {
+      "type": "string",
+      "description": "The base64 or hex encoded proof payload to verify."
     },
-    "required": [
-      "proof",
-      "taskId"
-    ]
-  },
-  "output": {
-    "type": "object",
-    "properties": {
-      "verified": {
-        "type": "boolean"
-      },
-      "score": {
-        "type": "number"
+    "escrowId": {
+      "type": "string",
+      "description": "Optional Escrow ID associated with the proof to check format constraints."
+    },
+    "signatures": {
+      "type": "array",
+      "description": "Array of signatures attached to the proof.",
+      "items": {
+        "type": "object",
+        "required": ["signer", "signature"],
+        "properties": {
+          "signer": {
+            "type": "string",
+            "description": "Public key or address of the signer."
+          },
+          "signature": {
+            "type": "string",
+            "description": "Cryptographic signature of the proof payload."
+          }
+        }
       }
     }
   }

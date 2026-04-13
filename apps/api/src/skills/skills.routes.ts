@@ -2,11 +2,13 @@ import { FastifyInstance } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import { SkillMonetizationPolicy } from './skill-pricing.service';
 import { walletRiskCheckService } from './wallet-risk-check.service';
+import { ProofVerifierService } from './proof-verifier.service';
 import { AccountingService } from '../accounting/accounting.service';
 
 export async function skillRoutes(fastify: FastifyInstance, options: { prisma: PrismaClient }) {
   const { prisma } = options;
   const accountingService = new AccountingService(prisma);
+  const proofVerifierService = new ProofVerifierService(prisma);
 
   /**
    * Catálogo Público de Skills (com filtros de monetização)
@@ -99,9 +101,13 @@ export async function skillRoutes(fastify: FastifyInstance, options: { prisma: P
     try {
       const inputPayload = request.body || {};
       
-      // Validação básica do Input
-      if (!inputPayload.walletAddress) {
+      // Validação básica do Input baseada na skill
+      if (skill.name === 'wallet-risk-check' && !inputPayload.walletAddress) {
         return reply.status(400).send({ error: 'Validation Error', message: 'walletAddress is required.' });
+      }
+
+      if (skill.name === 'proof-verifier' && (!inputPayload.proofPayload || !inputPayload.signatures)) {
+        return reply.status(400).send({ error: 'Validation Error', message: 'proofPayload and signatures are required.' });
       }
 
       // [Accounting] Cria o log inicial de execução
@@ -115,8 +121,16 @@ export async function skillRoutes(fastify: FastifyInstance, options: { prisma: P
 
       const startTime = Date.now();
 
-      // Executar a análise de risco (Wallet Risk Check)
-      const executionResult = await walletRiskCheckService.execute(inputPayload as any);
+      // Executar a skill solicitada
+      let executionResult;
+
+      if (skill.name === 'wallet-risk-check') {
+        executionResult = await walletRiskCheckService.execute(inputPayload as any);
+      } else if (skill.name === 'proof-verifier') {
+        executionResult = await proofVerifierService.execute(inputPayload as any);
+      } else {
+        throw new Error(`Execution for skill ${skill.name} is not implemented.`);
+      }
 
       const latencyMs = Date.now() - startTime;
 
