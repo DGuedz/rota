@@ -3,10 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.skillRoutes = skillRoutes;
 const skill_pricing_service_1 = require("./skill-pricing.service");
 const wallet_risk_check_service_1 = require("./wallet-risk-check.service");
+const proof_verifier_service_1 = require("./proof-verifier.service");
 const accounting_service_1 = require("../accounting/accounting.service");
 async function skillRoutes(fastify, options) {
     const { prisma } = options;
     const accountingService = new accounting_service_1.AccountingService(prisma);
+    const proofVerifierService = new proof_verifier_service_1.ProofVerifierService(prisma);
     /**
      * Catálogo Público de Skills (com filtros de monetização)
      */
@@ -85,9 +87,12 @@ async function skillRoutes(fastify, options) {
         let executionLog;
         try {
             const inputPayload = request.body || {};
-            // Validação básica do Input
-            if (!inputPayload.walletAddress) {
+            // Validação básica do Input baseada na skill
+            if (skill.name === 'wallet-risk-check' && !inputPayload.walletAddress) {
                 return reply.status(400).send({ error: 'Validation Error', message: 'walletAddress is required.' });
+            }
+            if (skill.name === 'proof-verifier' && (!inputPayload.proofPayload || !inputPayload.signatures)) {
+                return reply.status(400).send({ error: 'Validation Error', message: 'proofPayload and signatures are required.' });
             }
             // [Accounting] Cria o log inicial de execução
             executionLog = await accountingService.logExecution({
@@ -98,8 +103,17 @@ async function skillRoutes(fastify, options) {
                 requestPayload: inputPayload
             }, 'INITIATED'); // Tipos ainda quebram sem prisma generate, forçando cast
             const startTime = Date.now();
-            // Executar a análise de risco (Wallet Risk Check)
-            const executionResult = await wallet_risk_check_service_1.walletRiskCheckService.execute(inputPayload);
+            // Executar a skill solicitada
+            let executionResult;
+            if (skill.name === 'wallet-risk-check') {
+                executionResult = await wallet_risk_check_service_1.walletRiskCheckService.execute(inputPayload);
+            }
+            else if (skill.name === 'proof-verifier') {
+                executionResult = await proofVerifierService.execute(inputPayload);
+            }
+            else {
+                throw new Error(`Execution for skill ${skill.name} is not implemented.`);
+            }
             const latencyMs = Date.now() - startTime;
             // [Accounting] Se pagou via x402, captura a receita
             if (policy.requiresX402 && policy.priceAmount) {

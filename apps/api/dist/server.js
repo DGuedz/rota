@@ -28,6 +28,7 @@ const x402_routes_1 = require("./payments/x402.routes");
 const contract_events_service_1 = require("./contracts/contract-events.service");
 const contract_events_indexer_1 = require("./contracts/contract-events.indexer");
 const metrics_routes_1 = require("./accounting/metrics.routes");
+const reputation_routes_1 = require("./reputation/reputation.routes");
 // Carregar variáveis de ambiente
 dotenv_1.default.config({ path: '../../.env' });
 const app = (0, fastify_1.default)({
@@ -40,7 +41,7 @@ const redis = new ioredis_1.default(process.env.REDIS_URL || 'redis://localhost:
 const domainEventService = new domain_event_service_1.DomainEventService(prisma);
 const executionLogService = new execution_log_service_1.ExecutionLogService(prisma);
 const eventBus = new event_bus_1.RotaEventBus(domainEventService);
-const agentDispatcher = new dispatcher_1.AgentDispatcher(eventBus, executionLogService);
+const agentDispatcher = new dispatcher_1.AgentDispatcher(eventBus, executionLogService, prisma);
 // Inicializando Domínios Econômicos
 const intentRepo = new intent_repository_1.IntentRepository(prisma);
 const intentService = new intent_service_1.IntentService(intentRepo, eventBus);
@@ -62,6 +63,8 @@ app.register(rfq_routes_1.rfqRoutes, { prefix: '/rfq', rfqService, bidService })
 app.register(escrow_routes_1.escrowRoutes, { prefix: '/escrow', escrowService });
 app.register(x402_routes_1.x402Routes, { prefix: '/payments' });
 app.register(metrics_routes_1.metricsRoutes, { prefix: '/telemetry', prisma });
+// Reputação
+(0, reputation_routes_1.registerReputationRoutes)(app, { prisma });
 // Conecta o Dispatcher ao barramento de eventos
 agentDispatcher.start();
 // Rota de Healthcheck do ROTA Core
@@ -73,7 +76,7 @@ app.get('/health', async (request, reply) => {
         dbStatus = 'up';
     }
     catch (e) {
-        app.log.error('Database connection failed', e);
+        app.log.error(`Database connection failed: ${e.message}`);
     }
     try {
         const redisPing = await redis.ping();
@@ -82,7 +85,7 @@ app.get('/health', async (request, reply) => {
         }
     }
     catch (e) {
-        app.log.error('Redis connection failed', e);
+        app.log.error(`Redis connection failed: ${e.message}`);
     }
     return {
         status: 'ok',

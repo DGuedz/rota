@@ -63,3 +63,20 @@ pub fn emit_escrow_cancelled(
     let topics = (TOPIC_ESCROW, Symbol::short("CANCEL"), escrow_id.clone());
     env.events().publish(topics, status_before_cancel);
 }
+
+pub fn emit_escrow_disputed(
+    env: &Env,
+    escrow_id: &String,
+    buyer: &Address,
+) {
+    let topics = (TOPIC_ESCROW, Symbol::short("DISPUTED"), escrow_id.clone());
+    env.events().publish(topics, buyer.clone());
+}
+
+pub fn emit_intrusion_detected(
+    env: &Env,
+    attacker: &Address,
+) {
+    let topics = (Symbol::short("SECURITY"), Symbol::short("INTRUSION"));
+    env.events().publish(topics, attacker.clone());
+}

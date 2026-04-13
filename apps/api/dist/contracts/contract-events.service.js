@@ -70,7 +70,7 @@ class ContractEventsService {
         if (currentStatus === incomingStatus)
             return true;
         // Regras rígidas: Se já liquidou (Settled/Slashed), não pode voltar pra Locked/Bonded
-        const terminalStates = [client_1.EscrowStatus.SETTLED, client_1.EscrowStatus.SLASHED, client_1.EscrowStatus.CANCELLED];
+        const terminalStates = ['SETTLED', 'SLASHED', 'CANCELLED'];
         if (terminalStates.includes(currentStatus))
             return true;
         return false;

@@ -10,7 +10,31 @@ export declare class BidRepository {
         bondAmount: number;
         slaSeconds: number;
         quotePayload?: any;
-    }): Promise<any>;
-    findByRfq(rfqId: string): Promise<any>;
+    }): Promise<{
+        id: string;
+        status: import(".prisma/client").$Enums.BidStatus;
+        sellerAgentId: string;
+        bondAmount: import("@prisma/client/runtime/library").Decimal;
+        createdAt: Date;
+        updatedAt: Date;
+        price: import("@prisma/client/runtime/library").Decimal;
+        slaSeconds: number;
+        quotePayload: import("@prisma/client/runtime/library").JsonValue | null;
+        rfqId: string;
+        skillId: string | null;
+    }>;
+    findByRfq(rfqId: string): Promise<{
+        id: string;
+        status: import(".prisma/client").$Enums.BidStatus;
+        sellerAgentId: string;
+        bondAmount: import("@prisma/client/runtime/library").Decimal;
+        createdAt: Date;
+        updatedAt: Date;
+        price: import("@prisma/client/runtime/library").Decimal;
+        slaSeconds: number;
+        quotePayload: import("@prisma/client/runtime/library").JsonValue | null;
+        rfqId: string;
+        skillId: string | null;
+    }[]>;
 }
 //# sourceMappingURL=bid.repository.d.ts.map

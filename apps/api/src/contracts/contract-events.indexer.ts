@@ -95,7 +95,7 @@ export class ContractEventsIndexer {
 
         // Atualiza cursores em memória
         lastCursorProcessed = rawEvent.id;
-        lastLedgerProcessed = parseInt(rawEvent.ledger, 10);
+        lastLedgerProcessed = parseInt(rawEvent.ledger.toString(), 10);
       }
 
       // 5. Salva o checkpoint processado

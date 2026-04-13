@@ -13,7 +13,7 @@ export class XDRBuilder {
 
   private async buildTransaction(sourceAddress: string, operation: xdr.Operation): Promise<EscrowResult> {
     const sourceAccountInfo = await this.client.server.getAccount(sourceAddress);
-    const sourceAccount = new Account(sourceAddress, sourceAccountInfo.sequence);
+    const sourceAccount = new Account(sourceAddress, sourceAccountInfo.sequenceNumber());
 
     const transaction = new TransactionBuilder(sourceAccount, {
       fee: '100000', // Mock fee, simulateTransaction in prod

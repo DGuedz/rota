@@ -33,12 +33,14 @@ pub struct EscrowRecord {
     pub escrow_id: String,
     pub buyer: Address,
     pub seller: Address,
+    pub resolver: Address, // Oráculo/Árbitro (Agent Backend)
     pub asset: Address,
     pub amount: i128,
     pub bond_amount: i128,
     pub status: EscrowStatus,
     pub created_at: u64,
     pub deadline: u64,
+    pub dispute_deadline: u64, // Prazo para o buyer abrir disputa
     pub proof_hash: Option<String>,
     pub metadata_hash: Option<String>,
 }
@@ -46,4 +48,5 @@ pub struct EscrowRecord {
 #[contracttype]
 pub enum DataKey {
     Escrow(String), // Mapeia escrow_id -> EscrowRecord
+    Blacklist(Address), // Entidade de Defesa Ativa (Honeypot)
 }

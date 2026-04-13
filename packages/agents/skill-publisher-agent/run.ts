@@ -8,15 +8,15 @@ import { PublishService } from './publish.service';
 const logger = new StructuredLogger(skillPublisherAgentConfig.id);
 
 export async function runSkillPublisherAgent(event: RotaEvent): Promise<ExecutionResult> {
-  logger.info(`Received event: ${event.type}`, { eventId: event.id });
+  logger.info(event.eventId, "receive_event", `Received event: ${event.type}`);
 
   const requiredAction = getRequiredAction(event);
   
   if (!requiredAction) {
-    logger.warn(`No action mapped for event type: ${event.type}`);
+    logger.warn(event.eventId, "map_action", `No action mapped for event type: ${event.type}`);
     return {
       success: false,
-      reason: `Unhandled event type for publisher agent: ${event.type}`,
+      reason: "unsupported_event",
       actionsPerformed: [],
       generatedArtifacts: []
     };
@@ -24,12 +24,13 @@ export async function runSkillPublisherAgent(event: RotaEvent): Promise<Executio
 
   const policyDecision = publisherPolicies.validateAction(requiredAction);
   if (!policyDecision.allowed) {
-    logger.error(`Action blocked by policy: ${requiredAction}`, { reason: policyDecision.reason });
+    logger.error(event.eventId, "policy_check", `Action blocked by policy: ${requiredAction}`, { reason: policyDecision.reason });
     return {
       success: false,
-      reason: `Policy violation: ${policyDecision.reason}`,
+      reason: "blocked_by_policy",
       actionsPerformed: [],
-      generatedArtifacts: []
+      generatedArtifacts: [],
+      error: policyDecision.reason
     };
   }
 
@@ -74,7 +75,7 @@ export async function runSkillPublisherAgent(event: RotaEvent): Promise<Executio
         throw new Error(`Unhandled action in runtime: ${requiredAction}`);
     }
 
-    logger.info(`Agent execution completed successfully`, { generatedArtifacts });
+    logger.info(event.eventId, "execution_complete", `Agent execution completed successfully`, { generatedArtifacts });
 
     return {
       success: true,
@@ -85,7 +86,7 @@ export async function runSkillPublisherAgent(event: RotaEvent): Promise<Executio
     };
 
   } catch (error: any) {
-    logger.error(`Execution failed: ${error.message}`, { error });
+    logger.error(event.eventId, "execution_failed", `Execution failed: ${error.message}`, { error });
     return {
       success: false,
       reason: `Execution failed: ${error.message}`,

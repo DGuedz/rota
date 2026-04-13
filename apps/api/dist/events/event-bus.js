@@ -1,29 +1,46 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RotaEventBus = void 0;
-const events_1 = require("events");
+const bullmq_1 = require("bullmq");
+const ioredis_1 = __importDefault(require("ioredis"));
+const redisConnection = new ioredis_1.default(process.env.REDIS_URL || 'redis://localhost:6379');
 /**
- * Event Bus Interno da ROTA (Em Memória / DB Persisted)
- * Em um cenário de produção escalado, o EventEmitter pode ser trocado por Redis Pub/Sub ou SQS.
- * Atualmente atende à restrição "Pode usar EventEmitter ou fila simples baseada em Redis".
+ * Event Bus Interno da ROTA (BullMQ / Redis Persisted)
+ * Substitui o EventEmitter em memória por uma fila resiliente.
  */
 class RotaEventBus {
     eventService;
-    emitter = new events_1.EventEmitter();
+    queue;
+    worker;
     constructor(eventService) {
         this.eventService = eventService;
+        this.queue = new bullmq_1.Queue('rota-events', { connection: redisConnection });
     }
     /**
      * Publica um evento no barramento.
      * Passo 1: Persiste no PostgreSQL como PENDING.
-     * Passo 2: Dispara o evento via EventEmitter para os workers (Agentes).
+     * Passo 2: Adiciona na fila BullMQ para os workers (Agentes).
      */
     async publish(source, type, payload, correlationId, causationId) {
         try {
             // 1. Grava no banco
             const domainEvent = await this.eventService.createEvent(source, type, payload, correlationId, causationId);
-            // 2. Emite internamente (Fire and forget na perspectiva do emissor)
-            this.emitter.emit('rota_event', domainEvent);
+            const mappedEvent = {
+                eventId: domainEvent.eventId, // <-- Alterado de 'id' para 'eventId' para o Dispatcher
+                type: domainEvent.type,
+                source: domainEvent.source,
+                payload: domainEvent.payload,
+                timestamp: domainEvent.receivedAt ? domainEvent.receivedAt.toISOString() : new Date().toISOString()
+            };
+            // 2. Adiciona na fila (garante idempotência via jobId)
+            await this.queue.add(type, mappedEvent, {
+                jobId: domainEvent.eventId,
+                attempts: 3,
+                backoff: { type: 'exponential', delay: 1000 }
+            });
             return domainEvent.eventId;
         }
         catch (error) {
@@ -32,21 +49,52 @@ class RotaEventBus {
         }
     }
     /**
-     * Registra um listener master para o barramento.
+     * Registra um listener master para o barramento via BullMQ Worker.
      * O Agent Dispatcher será o principal subscriber aqui.
      */
     subscribe(handler) {
-        this.emitter.on('rota_event', async (domainEvent) => {
+        this.worker = new bullmq_1.Worker('rota-events', async (job) => {
+            const domainEvent = job.data;
             try {
-                await this.eventService.updateStatus(domainEvent.eventId, 'PROCESSING');
+                if (domainEvent.eventId) {
+                    try {
+                        await this.eventService.updateStatus(domainEvent.eventId, 'PROCESSING');
+                    }
+                    catch (e) {
+                        // Ignore
+                    }
+                }
                 await handler(domainEvent);
-                await this.eventService.updateStatus(domainEvent.eventId, 'PROCESSED');
+                if (domainEvent.eventId) {
+                    try {
+                        await this.eventService.updateStatus(domainEvent.eventId, 'PROCESSED');
+                    }
+                    catch (e) {
+                        // Ignore
+                    }
+                }
             }
             catch (error) {
                 console.error(`[EventBus] Error handling event ${domainEvent.eventId}:`, error.message);
-                await this.eventService.updateStatus(domainEvent.eventId, 'FAILED', error.message);
+                if (domainEvent.eventId) {
+                    try {
+                        await this.eventService.updateStatus(domainEvent.eventId, 'FAILED', error.message);
+                    }
+                    catch (e) {
+                        // Ignore
+                    }
+                }
+                throw error; // Let BullMQ retry
             }
+        }, { connection: redisConnection });
+        this.worker.on('failed', (job, err) => {
+            console.error(`[EventBus] Job ${job?.id} failed with error ${err.message}`);
         });
+    }
+    async close() {
+        await this.worker?.close();
+        await this.queue.close();
+        redisConnection.disconnect();
     }
 }
 exports.RotaEventBus = RotaEventBus;

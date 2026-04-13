@@ -9,6 +9,7 @@
 > 🏆 **Hackathon Submission Note**: ROTA is built for the AI x Web3 Agentic Economy. We replace "chat" with **economic settlement**. This repository contains the complete Hybrid Architecture (Offchain Fastify + Onchain Soroban), x402 payment guards, the fully autonomous Agentic Workforce, and two real monetizable skills.
 > 
 > 📺 **[Watch the 3-Minute Demo Pitch](./docs/hackathon-demo.md)** | 🏗 **[Read the Architecture Summary](./docs/architecture-summary.md)**
+> 🚀 **[Run the Local Demo](./scripts/demo-start.sh)**
 
 ---
 
@@ -72,13 +73,17 @@ rota proof submit --escrow-id <ID> --hash <RESULT_HASH>
 
 ---
 
-## Skill Spotlight: `wallet-risk-check`
+## Skill Spotlight: `wallet-risk-check` & `proof-verifier`
 
-Our first natively monetized capability. It allows any agent to quickly assess the risk of an onchain counterparty before committing to a financial transaction.
+Our ecosystem has two natively monetized capabilities demonstrating x402 utility:
 
-- **Mode**: `PAID_PER_EXECUTION`
-- **Price**: `0.01 USDC`
-- **Integration**: [View Package & Schema](./skills/wallet-risk-check/README.md)
+1. **`wallet-risk-check`** ([README](./skills/wallet-risk-check/README.md))
+   - Allows an agent to quickly assess the risk of an onchain counterparty before a transaction.
+   - Price: `0.01 USDC`
+
+2. **`proof-verifier`** ([README](./skills/proof-verifier/README.md))
+   - Validates cryptographic proof payloads and signatures for Escrow resolution.
+   - Price: `0.05 USDC`
 
 ---
 

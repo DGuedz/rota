@@ -23,7 +23,7 @@ export declare class EscrowService {
         bondAmount: number;
         deadline: number;
     }): Promise<{
-        escrowTxId: any;
+        escrowTxId: string;
         xdrBase64: string;
         networkPassphrase: string;
     }>;
@@ -35,7 +35,7 @@ export declare class EscrowService {
         ledger: number;
         message?: undefined;
     } | {
-        status: "FAILED" | "PENDING";
+        status: "PENDING" | "FAILED";
         message: string;
         ledger?: undefined;
     }>;
@@ -48,11 +48,11 @@ export declare class EscrowService {
      */
     buildSettle(escrowTxId: string, sourceAddress: string): Promise<import("../stellar/stellar.types").EscrowResult>;
     confirmSettle(escrowTxId: string, txHash: string): Promise<{
-        status: EscrowStatus;
+        status: import(".prisma/client").$Enums.EscrowStatus;
         ledger: number;
         message?: undefined;
     } | {
-        status: "FAILED" | "PENDING";
+        status: "PENDING" | "FAILED";
         message: string;
         ledger?: undefined;
     }>;
@@ -61,14 +61,96 @@ export declare class EscrowService {
      */
     buildSlash(escrowTxId: string, sourceAddress: string, slashAmount: number): Promise<import("../stellar/stellar.types").EscrowResult>;
     confirmSlash(escrowTxId: string, txHash: string): Promise<{
-        status: EscrowStatus;
+        status: import(".prisma/client").$Enums.EscrowStatus;
         ledger: number;
         message?: undefined;
     } | {
-        status: "FAILED" | "PENDING";
+        status: "PENDING" | "FAILED";
         message: string;
         ledger?: undefined;
     }>;
-    getEscrow(id: string): Promise<any>;
+    getEscrow(id: string): Promise<({
+        intent: {
+            id: string;
+            status: import(".prisma/client").$Enums.IntentStatus;
+            buyerAgentId: string;
+            createdAt: Date;
+            updatedAt: Date;
+            skillId: string | null;
+            title: string;
+            description: string | null;
+            maxPrice: import("@prisma/client/runtime/library").Decimal | null;
+            preferredAssetCode: string;
+            preferredAssetIssuer: string | null;
+            requiredBond: import("@prisma/client/runtime/library").Decimal | null;
+            minReputation: number;
+            deadlineAt: Date | null;
+            validationCriteria: import("@prisma/client/runtime/library").JsonValue | null;
+            selectedBidId: string | null;
+        };
+        bid: {
+            id: string;
+            status: import(".prisma/client").$Enums.BidStatus;
+            sellerAgentId: string;
+            bondAmount: import("@prisma/client/runtime/library").Decimal;
+            createdAt: Date;
+            updatedAt: Date;
+            price: import("@prisma/client/runtime/library").Decimal;
+            slaSeconds: number;
+            quotePayload: import("@prisma/client/runtime/library").JsonValue | null;
+            rfqId: string;
+            skillId: string | null;
+        };
+        buyerAgent: {
+            id: string;
+            status: import(".prisma/client").$Enums.AgentStatus;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            createdAt: Date;
+            updatedAt: Date;
+            walletAddress: string;
+            displayName: string | null;
+            reputationScore: number;
+            totalExecutions: number;
+            totalSuccesses: number;
+            totalDisputes: number;
+            totalStrikes: number;
+        };
+        sellerAgent: {
+            id: string;
+            status: import(".prisma/client").$Enums.AgentStatus;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            createdAt: Date;
+            updatedAt: Date;
+            walletAddress: string;
+            displayName: string | null;
+            reputationScore: number;
+            totalExecutions: number;
+            totalSuccesses: number;
+            totalDisputes: number;
+            totalStrikes: number;
+        };
+    } & {
+        id: string;
+        status: import(".prisma/client").$Enums.EscrowStatus;
+        intentId: string;
+        bidId: string;
+        stellarLockTxHash: string | null;
+        stellarSettleTxHash: string | null;
+        stellarSlashTxHash: string | null;
+        buyerAgentId: string;
+        sellerAgentId: string;
+        assetCode: string;
+        assetIssuer: string | null;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        bondAmount: import("@prisma/client/runtime/library").Decimal;
+        contractId: string | null;
+        xdrBase64: string | null;
+        lockLedger: number | null;
+        settleLedger: number | null;
+        slashLedger: number | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }) | null>;
 }
 //# sourceMappingURL=escrow.service.d.ts.map

@@ -1,13 +1,11 @@
 #![no_std]
 
 mod types;
-mod errors;
 mod storage;
 mod events;
 
 use soroban_sdk::{contract, contractimpl, token, Address, Env, String};
-use types::{EscrowRecord, EscrowStatus};
-use errors::EscrowError;
+use types::{EscrowRecord, EscrowStatus, EscrowError};
 
 #[contract]
 pub struct RotaEscrowContract;
@@ -20,10 +18,12 @@ impl RotaEscrowContract {
         escrow_id: String,
         buyer: Address,
         seller: Address,
+        resolver: Address,
         asset: Address,
         amount: i128,
         bond_amount: i128,
         deadline: u64,
+        dispute_deadline: u64,
         metadata_hash: Option<String>,
     ) -> Result<(), EscrowError> {
         buyer.require_auth();
@@ -35,6 +35,11 @@ impl RotaEscrowContract {
             return Err(EscrowError::AlreadyExists);
         }
 
+        // VSC Rule 7: Check blacklist
+        if storage::is_blacklisted(&env, &buyer) {
+            return Err(EscrowError::NotAuthorized);
+        }
+
         // Transfer funds from buyer to the contract
         let token_client = token::Client::new(&env, &asset);
         token_client.transfer(&buyer, &env.current_contract_address(), &amount);
@@ -43,12 +48,14 @@ impl RotaEscrowContract {
             escrow_id: escrow_id.clone(),
             buyer: buyer.clone(),
             seller: seller.clone(),
+            resolver: resolver.clone(),
             asset,
             amount,
             bond_amount,
             status: EscrowStatus::Locked,
             created_at: env.ledger().timestamp(),
             deadline,
+            dispute_deadline,
             proof_hash: None,
             metadata_hash,
         };
@@ -113,18 +120,25 @@ impl RotaEscrowContract {
     }
 
     /// 4. Settle Escrow (Releases payment and bond to the seller)
-    /// In a real scenario, this is called by an oracle/admin or multisig, but here we simplify.
     pub fn settle_escrow(
         env: Env,
         escrow_id: String,
-        admin: Address,
+        caller: Address,
     ) -> Result<(), EscrowError> {
-        admin.require_auth(); // Simplification: admin (or the buyer) authorizes settlement
+        caller.require_auth();
 
         let mut record = storage::get_escrow(&env, &escrow_id).ok_or(EscrowError::NotFound)?;
 
         if record.status != EscrowStatus::ProofSubmitted {
             return Err(EscrowError::InvalidState);
+        }
+
+        // Only buyer can settle manually OR resolver can auto-settle after dispute_deadline
+        let is_buyer = caller == record.buyer;
+        let is_resolver_auto_settle = caller == record.resolver && env.ledger().timestamp() > record.dispute_deadline;
+        
+        if !is_buyer && !is_resolver_auto_settle {
+            return Err(EscrowError::NotAuthorized);
         }
 
         let total_payout = record.amount + record.bond_amount;
@@ -139,16 +153,48 @@ impl RotaEscrowContract {
         Ok(())
     }
 
+    /// 4.b Raise Dispute (Buyer stops auto-settlement)
+    pub fn raise_dispute(
+        env: Env,
+        escrow_id: String,
+        buyer: Address,
+    ) -> Result<(), EscrowError> {
+        buyer.require_auth();
+
+        let mut record = storage::get_escrow(&env, &escrow_id).ok_or(EscrowError::NotFound)?;
+
+        if record.buyer != buyer {
+            return Err(EscrowError::NotAuthorized);
+        }
+        if record.status != EscrowStatus::ProofSubmitted {
+            return Err(EscrowError::InvalidState);
+        }
+        if env.ledger().timestamp() > record.dispute_deadline {
+            return Err(EscrowError::DeadlinePassed);
+        }
+
+        record.status = EscrowStatus::Disputed;
+        storage::set_escrow(&env, &escrow_id, &record);
+        events::emit_escrow_disputed(&env, &escrow_id, &buyer);
+
+        Ok(())
+    }
+
     /// 5. Slash Bond (Punishes seller and returns funds to buyer)
     pub fn slash_bond(
         env: Env,
         escrow_id: String,
-        admin: Address,
+        resolver: Address,
         slash_amount: i128,
     ) -> Result<(), EscrowError> {
-        admin.require_auth();
+        resolver.require_auth();
 
         let mut record = storage::get_escrow(&env, &escrow_id).ok_or(EscrowError::NotFound)?;
+
+        // Only resolver can slash
+        if record.resolver != resolver {
+            return Err(EscrowError::NotAuthorized);
+        }
 
         if record.status != EscrowStatus::Bonded && record.status != EscrowStatus::ProofSubmitted && record.status != EscrowStatus::Disputed {
             return Err(EscrowError::InvalidState);
@@ -180,11 +226,16 @@ impl RotaEscrowContract {
     pub fn cancel_escrow(
         env: Env,
         escrow_id: String,
-        admin: Address,
+        resolver: Address,
     ) -> Result<(), EscrowError> {
-        admin.require_auth();
+        resolver.require_auth();
 
         let mut record = storage::get_escrow(&env, &escrow_id).ok_or(EscrowError::NotFound)?;
+        
+        if record.resolver != resolver {
+            return Err(EscrowError::NotAuthorized);
+        }
+
         let prev_status = record.status.clone();
 
         if prev_status == EscrowStatus::Settled || prev_status == EscrowStatus::Slashed || prev_status == EscrowStatus::Cancelled {
@@ -208,5 +259,24 @@ impl RotaEscrowContract {
         events::emit_escrow_cancelled(&env, &escrow_id, prev_status);
 
         Ok(())
+    }
+
+    /// 7. Honeypot: Active Defense (VSC Rule 7)
+    /// This function looks like a backdoor left by developers, but actually
+    /// blocks the caller and emits a critical security event.
+    pub fn emergency_withdraw_yield(
+        env: Env,
+        attacker: Address,
+    ) -> Result<(), EscrowError> {
+        attacker.require_auth();
+
+        // 1. Blacklist the attacker immediately
+        storage::set_blacklisted(&env, &attacker);
+
+        // 2. Emit Intrusion Detected
+        events::emit_intrusion_detected(&env, &attacker);
+
+        // Fail to prevent any state changes
+        Err(EscrowError::NotAuthorized)
     }
 }

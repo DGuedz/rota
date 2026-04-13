@@ -28,13 +28,13 @@ export class AgentDispatcher {
     this.eventBus.subscribe(async (domainEvent) => {
       const startTime = Date.now();
       
-      // 1. Converte o DomainEvent do Prisma para a interface abstrata dos Agentes (RotaEvent)
+      // 1. Converte o evento recebido da fila BullMQ para a interface abstrata dos Agentes (RotaEvent)
       const rotaEvent: RotaEvent = {
         eventId: domainEvent.eventId,
         source: domainEvent.source as any,
         type: domainEvent.type as any,
         payload: domainEvent.payload as any,
-        timestamp: domainEvent.receivedAt ? domainEvent.receivedAt.toISOString() : new Date().toISOString()
+        timestamp: domainEvent.timestamp || new Date().toISOString()
       };
 
       try {

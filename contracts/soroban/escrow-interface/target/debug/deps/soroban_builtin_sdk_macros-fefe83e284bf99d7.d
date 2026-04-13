@@ -1,0 +1,7 @@
+/Users/doublegreen/a2a_server_economy_stellar_hacks/rota/contracts/soroban/escrow-interface/target/debug/deps/soroban_builtin_sdk_macros-fefe83e284bf99d7.d: /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-20.3.0/src/lib.rs /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-20.3.0/src/derive_fn.rs /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-20.3.0/src/derive_type.rs
+
+/Users/doublegreen/a2a_server_economy_stellar_hacks/rota/contracts/soroban/escrow-interface/target/debug/deps/libsoroban_builtin_sdk_macros-fefe83e284bf99d7.dylib: /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-20.3.0/src/lib.rs /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-20.3.0/src/derive_fn.rs /Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-20.3.0/src/derive_type.rs
+
+/Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-20.3.0/src/lib.rs:
+/Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-20.3.0/src/derive_fn.rs:
+/Users/doublegreen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-20.3.0/src/derive_type.rs:

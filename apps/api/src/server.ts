@@ -81,8 +81,8 @@ app.get('/health', async (request, reply) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     dbStatus = 'up';
-  } catch (e) {
-    app.log.error('Database connection failed', e);
+  } catch (e: any) {
+    app.log.error(`Database connection failed: ${e.message}`);
   }
 
   try {
@@ -90,8 +90,8 @@ app.get('/health', async (request, reply) => {
     if (redisPing === 'PONG') {
       redisStatus = 'up';
     }
-  } catch (e) {
-    app.log.error('Redis connection failed', e);
+  } catch (e: any) {
+    app.log.error(`Redis connection failed: ${e.message}`);
   }
 
   return {

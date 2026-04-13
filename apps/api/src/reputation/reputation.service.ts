@@ -71,7 +71,7 @@ export class ReputationService {
             ? Severity.INFO
             : rule.severity,
           reason,
-          evidence: input.evidence ?? undefined,
+          evidence: (input.evidence as any) ?? undefined,
           previousScore,
           newScore,
         },

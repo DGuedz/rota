@@ -9,7 +9,7 @@ class XDRBuilder {
     }
     async buildTransaction(sourceAddress, operation) {
         const sourceAccountInfo = await this.client.server.getAccount(sourceAddress);
-        const sourceAccount = new stellar_sdk_1.Account(sourceAddress, sourceAccountInfo.sequence);
+        const sourceAccount = new stellar_sdk_1.Account(sourceAddress, sourceAccountInfo.sequenceNumber());
         const transaction = new stellar_sdk_1.TransactionBuilder(sourceAccount, {
             fee: '100000', // Mock fee, simulateTransaction in prod
             networkPassphrase: this.client.networkPassphrase,
