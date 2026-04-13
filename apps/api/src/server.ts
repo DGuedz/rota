@@ -24,6 +24,7 @@ import { ContractEventsService } from './contracts/contract-events.service';
 import { ContractEventsIndexer } from './contracts/contract-events.indexer';
 import { metricsRoutes } from './accounting/metrics.routes';
 import { registerReputationRoutes } from './reputation/reputation.routes';
+import { auditorRoutes } from './agents/auditor.routes';
 
 // Carregar variáveis de ambiente
 dotenv.config({ path: '../../.env' });
@@ -66,6 +67,7 @@ app.register(rfqRoutes, { prefix: '/rfq', rfqService, bidService });
   app.register(escrowRoutes, { prefix: '/escrow', escrowService });
   app.register(x402Routes, { prefix: '/payments' });
   app.register(metricsRoutes, { prefix: '/telemetry', prisma });
+  app.register(auditorRoutes, { prefix: '/agents/auditor', prisma });
 
   // Reputação
   registerReputationRoutes(app, { prisma });
