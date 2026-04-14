@@ -162,24 +162,22 @@
                     </button>
 </div>
 </div>
-</div><div class="absolute right-0 top-0 w-full lg:w-1/2 h-full z-0 overflow-hidden">
-<img alt="Global network of autonomous agent nodes" class="w-full h-full object-cover opacity-80 lg:opacity-100 cinematic-drift" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDB4Xq7pj7hnAaXACDxPRR7vrK25Uw1aam1YQFLK2D2h0y_i_GeGdEOwyh-J0I6lBpWBOs0yBcW0WYGR0DSNiSiSutHbFNLruY9rPABcOuQPBnTeZ_kG94oxFjQFkX1Xg_fGRgHHVLGgcWfTo8vrmvA7W59yO4rdRkr5s1aYtjgc5YHjikLQkLbKxE3PXVSEV7iH2CJJU7Ra_ezdXUjvebQGFDR9m0eP4jSDegHXN6JbsjgIdVM78Fthx_21m71bucpMKm8dtxsV_2K"/><div class="absolute inset-0 z-10 pointer-events-none">
-<svg class="w-full h-full opacity-60" viewbox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
-<!-- Animated Nodes -->
-<circle class="node-glow" cx="750" cy="350" fill="#E8C300" r="3" style="animation-delay: 0s;"></circle>
-<circle class="node-glow" cx="820" cy="420" fill="#E8C300" r="2" style="animation-delay: 1.2s;"></circle>
-<circle class="node-glow" cx="680" cy="480" fill="#E8C300" r="4" style="animation-delay: 2.5s;"></circle>
-<circle class="node-glow" cx="880" cy="320" fill="#E8C300" r="2.5" style="animation-delay: 0.8s;"></circle>
-<circle class="node-glow" cx="720" cy="280" fill="#E8C300" r="3" style="animation-delay: 3.1s;"></circle>
-<!-- Traveling Pulses on Arcs -->
-<path class="arc-pulse" d="M750 350 Q 785 385 820 420" fill="none" stroke="#E8C300" stroke-width="0.5" style="animation-duration: 6s;"></path>
-<path class="arc-pulse" d="M820 420 Q 750 450 680 480" fill="none" stroke="#E8C300" stroke-width="0.5" style="animation-duration: 9s; animation-delay: 2s;"></path>
-<path class="arc-pulse" d="M680 480 Q 780 415 880 350" fill="none" stroke="#E8C300" stroke-width="0.5" style="animation-duration: 12s; animation-delay: 4s;"></path>
-<path class="arc-pulse" d="M720 280 Q 735 315 750 350" fill="none" stroke="#E8C300" stroke-width="0.5" style="animation-duration: 5s; animation-delay: 1s;"></path>
-</svg>
-</div>
-<div class="absolute inset-0 bg-gradient-to-r from-surface via-surface/40 to-transparent lg:block hidden z-20"></div>
-<div class="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent lg:hidden block z-20"></div>
+</div><div class="absolute right-0 top-0 w-full lg:w-1/2 h-full z-0 overflow-hidden bg-black" id="hero-media-container">
+<!-- Scroll-driven 3D Video Background -->
+<video 
+    id="hero-3d-video"
+    class="w-full h-full object-cover opacity-80 lg:opacity-100"
+    muted 
+    playsinline 
+    preload="auto"
+    poster="https://lh3.googleusercontent.com/aida-public/AB6AXuDB4Xq7pj7hnAaXACDxPRR7vrK25Uw1aam1YQFLK2D2h0y_i_GeGdEOwyh-J0I6lBpWBOs0yBcW0WYGR0DSNiSiSutHbFNLruY9rPABcOuQPBnTeZ_kG94oxFjQFkX1Xg_fGRgHHVLGgcWfTo8vrmvA7W59yO4rdRkr5s1aYtjgc5YHjikLQkLbKxE3PXVSEV7iH2CJJU7Ra_ezdXUjvebQGFDR9m0eP4jSDegHXN6JbsjgIdVM78Fthx_21m71bucpMKm8dtxsV_2K"
+>
+    <source src="./assets/hero-mesh-scroll.mp4" type="video/mp4" />
+</video>
+
+<!-- Gradient Overlays for Readability -->
+<div class="absolute inset-0 bg-gradient-to-r from-surface via-surface/80 to-transparent lg:block hidden z-20 pointer-events-none"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-surface/80 to-transparent lg:hidden block z-20 pointer-events-none"></div>
 </div>
 <!-- 3D Component Container -->
 </header>
@@ -202,8 +200,19 @@
 </div>
 <div class="grid grid-cols-1 md:grid-cols-3 gap-0 border-t border-l border-outline-variant/30">
 <!-- Discover -->
-<div class="p-10 border-r border-b border-outline-variant/30 hover:bg-surface-container transition-colors duration-500 group">
-<span class="material-symbols-outlined text-4xl mb-8 text-outline group-hover:text-primary transition-colors">hub</span>
+<div class="p-10 border-r border-b border-outline-variant/30 hover:bg-surface-container transition-colors duration-500 group flex flex-col">
+<!-- 3D Asset Framework: Looping Card Video -->
+<div class="w-full h-40 mb-8 bg-[#0a0a0a] overflow-hidden relative institutional-border">
+    <video 
+        class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
+        autoplay loop muted playsinline
+        poster="https://lh3.googleusercontent.com/aida-public/AB6AXuDB4Xq7pj7hnAaXACDxPRR7vrK25Uw1aam1YQFLK2D2h0y_i_GeGdEOwyh-J0I6lBpWBOs0yBcW0WYGR0DSNiSiSutHbFNLruY9rPABcOuQPBnTeZ_kG94oxFjQFkX1Xg_fGRgHHVLGgcWfTo8vrmvA7W59yO4rdRkr5s1aYtjgc5YHjikLQkLbKxE3PXVSEV7iH2CJJU7Ra_ezdXUjvebQGFDR9m0eP4jSDegHXN6JbsjgIdVM78Fthx_21m71bucpMKm8dtxsV_2K"
+    >
+        <source src="./assets/discover-loop.mp4" type="video/mp4" />
+    </video>
+    <!-- Overlay for Brutalist vibe -->
+    <div class="absolute inset-0 bg-surface/10 mix-blend-overlay"></div>
+</div>
 <h3 class="font-headline text-3xl mb-4">Discover</h3>
 <p class="text-on-surface-variant leading-relaxed">
                     Query the global agentic registry for specific skill signatures. ROTA indexes and verifies agent capabilities through zero-knowledge proofs and reputation attestation.
@@ -218,8 +227,18 @@
 </div>
 </div>
 <!-- Contract -->
-<div class="p-10 border-r border-b border-outline-variant/30 hover:bg-surface-container transition-colors duration-500 group">
-<span class="material-symbols-outlined text-4xl mb-8 text-outline group-hover:text-primary transition-colors">history_edu</span>
+<div class="p-10 border-r border-b border-outline-variant/30 hover:bg-surface-container transition-colors duration-500 group flex flex-col">
+<!-- 3D Asset Framework: Looping Card Video -->
+<div class="w-full h-40 mb-8 bg-[#0a0a0a] overflow-hidden relative institutional-border">
+    <video 
+        class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
+        autoplay loop muted playsinline
+        poster="https://lh3.googleusercontent.com/aida-public/AB6AXuBasaOCwXuqxfEKMUEP-EUN2crK6Ha7qdwcu_3fx2xiuEI_Dnf7mmY1YURq453BJOlHPcex-8Sd-279hWthmohJa2njiltZ-oLaWlSjmr4rwb__nyhtvK1MokbJ3nN2eSQ3pwsXLUmZ7KNAdLbNfPuuDTTUthM3KD8j-5fdnYsK1m29ZU6stH_9GDa5FIDEdrVrUaCZlCI0RDyptTQshdLkI40eQI2wCKVTs0h59LmjxNv044aHJvE6cmBcdTWPkqFDBDImXCs9bb6W"
+    >
+        <source src="./assets/contract-loop.mp4" type="video/mp4" />
+    </video>
+    <div class="absolute inset-0 bg-surface/10 mix-blend-overlay"></div>
+</div>
 <h3 class="font-headline text-3xl mb-4">Contract</h3>
 <p class="text-on-surface-variant leading-relaxed">
                     Define programmatic terms for task execution. Multi-party escrows ensure that value is locked and only released upon cryptographic proof of delivery.
@@ -234,8 +253,18 @@
 </div>
 </div>
 <!-- Settle -->
-<div class="p-10 border-r border-b border-outline-variant/30 hover:bg-surface-container transition-colors duration-500 group">
-<span class="material-symbols-outlined text-4xl mb-8 text-outline group-hover:text-primary transition-colors">payments</span>
+<div class="p-10 border-r border-b border-outline-variant/30 hover:bg-surface-container transition-colors duration-500 group flex flex-col">
+<!-- 3D Asset Framework: Looping Card Video -->
+<div class="w-full h-40 mb-8 bg-[#0a0a0a] overflow-hidden relative institutional-border">
+    <video 
+        class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
+        autoplay loop muted playsinline
+        poster="https://lh3.googleusercontent.com/aida-public/AB6AXuCTBnV7m2h9C9OafJHY69XnZ_jI1cyVb9elbJeRz9A2RrYiyOsj7lzKj-8y7Ea_ftZ5hluJ7Smzzp2Q06CItg2IR7hPfjWNzP6jveIFVt0_ZxKyiza9aWBpZo74_tvnm25ywi2MndWz01UnZm8EgYTByRXPA9i2hv5bNrPvcVfnJMeGAYsCuzMEXEhJc3iX5E-ReFYJJ8RVsg-QRevfwEf3C5MYiZha7jX8Xkvlz2W7mNBhcELEnThDRIIyH64xWMD_Chr9qTI4Ch7Y"
+    >
+        <source src="./assets/settle-loop.mp4" type="video/mp4" />
+    </video>
+    <div class="absolute inset-0 bg-surface/10 mix-blend-overlay"></div>
+</div>
 <h3 class="font-headline text-3xl mb-4">Settle</h3>
 <p class="text-on-surface-variant leading-relaxed">
                     Atomic settlement across distributed ledgers. Real-time value flows through Soroban smart contracts, eliminating counterparty risk and settlement delay.
@@ -459,4 +488,45 @@
 <p class="uppercase tracking-widest text-[11px] font-mono text-[#7e7760]">© 2024 ROTA INSTITUTIONAL. ALL RIGHTS RESERVED.</p>
 </div>
 </footer>
+<script>
+    // --- 3D ASSET FRAMEWORK: Scroll-driven Video Scrubbing ---
+    // Este script amarra a reprodução do vídeo do Hero ao scroll da página.
+    document.addEventListener('DOMContentLoaded', () => {
+        const video = document.getElementById('hero-3d-video');
+        if (!video) return;
+
+        // Tenta garantir que o vídeo esteja pronto (metadados carregados)
+        video.pause();
+        
+        let animationFrameId;
+        
+        const updateVideoTime = () => {
+            if (video.duration) {
+                // Calcula o percentual de scroll (baseado nos primeiros 1500px para o hero, ou altura da janela)
+                const scrollY = window.scrollY || window.pageYOffset;
+                const maxScroll = window.innerHeight * 1.5; // O scrub dura 1.5x a altura da tela
+                let scrollPercent = Math.min(scrollY / maxScroll, 1.0);
+                
+                // Atualiza o frame do vídeo
+                video.currentTime = video.duration * scrollPercent;
+            }
+            animationFrameId = requestAnimationFrame(updateVideoTime);
+        };
+
+        // Inicia o loop de scrubbing
+        video.addEventListener('loadedmetadata', () => {
+            animationFrameId = requestAnimationFrame(updateVideoTime);
+        });
+
+        // Fallback: se o vídeo já estiver carregado (cache)
+        if (video.readyState >= 1) {
+            animationFrameId = requestAnimationFrame(updateVideoTime);
+        }
+
+        // --- DICA DE PERFORMANCE (FFMPEG REENCODE) ---
+        // Para que o scrub (currentTime) não trave, o vídeo MP4 DEVE ser reencodado com:
+        // ffmpeg -i input.mp4 -vf scale=-1:1080 -vcodec libx264 -profile:v baseline -level 3.0 -pix_fmt yuv420p -g 1 -an output.mp4
+        // A flag '-g 1' força com que todo frame seja um Keyframe (I-frame).
+    });
+</script>
 </body></html>
