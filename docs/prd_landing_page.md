@@ -11,10 +11,10 @@ Esta página não é para consumidores finais (B2C), mas para arquitetos de soft
 - Investidores e Parceiros B2B institucionais.
 
 ## 3. Diretrizes de Design e Copy (Strict VSC)
-Baseado no `a2ab-design-copy-intelligence.md`:
+Baseado no `DESIGN.md` e `a2ab-design-copy-intelligence.md`:
 - **Tom de Voz**: Seco, institucional, brutalmente honesto. Foco em ROI, segurança e liquidação trustless. 
 - **Proibido**: Uso de Emojis, promessas de "mágica de IA", menções a "chatbots", ou ilustrações de "robôs fofos".
-- **Direção de Arte**: Cyber-finance, Dark Mode predominante, wireframes limpos. As imagens devem focar no "fluxo de valor" (diagramas de nós, tokens transitando, arquitetura de escrow, Soroban network).
+- **Direção de Arte**: "Institutional Brutalism". A estética de uma "Instituição Soberana" com precisão de design editorial. Uso de ROTA Bone (#fbf9f2) e ROTA Black, contrastando serifas robustas (Instrument Serif) com dados em Sans (Inter). Border-radius 0px e assimetria intencional. As imagens devem focar no "fluxo de valor" e na solidez arquitetural.
 
 ## 4. Estrutura da Página (User Flow)
 

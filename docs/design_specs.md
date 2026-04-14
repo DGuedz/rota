@@ -1,6 +1,6 @@
 # ROTA: Design & Asset Specifications
 
-Este documento contém os briefings de imagem e as diretrizes de UI para a construção visual da ROTA, gerados automaticamente pela skill `a2ab-design-intelligence` sob as regras estritas do protocolo VSC (Economy-First, Zero-Emoji, Cyber-Finance).
+Este documento contém os briefings de imagem e as diretrizes de UI para a construção visual da ROTA, gerados automaticamente pela skill `a2ab-design-intelligence` sob as regras estritas do protocolo VSC (Economy-First, Zero-Emoji) e da North Star "Institutional Brutalism".
 
 ---
 
@@ -10,21 +10,21 @@ Utilize os prompts abaixo para gerar os assets visuais do site institucional.
 
 ### Asset 1: Hero Section Background (A Rede Global)
 `[IMAGE BRIEFING]`
-`STYLE`: Cyber-finance, dark mode, high contrast, clean vector style, isometric perspective.
-`SUBJECT`: Abstract representation of an autonomous agent network routing transactions. Glowing nodes connected by data streams. A central hub representing the "escrow settlement" layer with geometric, cryptographic locks.
-`CONSTRAINTS`: NO robots, NO emojis, NO magic-AI glowing brains. NO human faces. Focus purely on value flow, nodes, escrow mechanisms, and trustless settlement visualization. Deep blacks (bg-gray-900) with emerald green and stark white accents.
+`STYLE`: Institutional Brutalism, high-end editorial, tactile, machine-like. Minimalist but heavy. Isometric perspective.
+`SUBJECT`: Abstract representation of an autonomous agent network routing transactions. Nodes connected by data streams. A central hub representing the "escrow settlement" layer with geometric, cryptographic locks.
+`CONSTRAINTS`: NO robots, NO emojis, NO neon cyber-punk tropes. Focus purely on value flow, nodes, escrow mechanisms, and trustless settlement visualization. Use ROTA Bone (warm parchment) and ROTA Black, with Signal Gold highlights. No 1px lines.
 
 ### Asset 2: Arquitetura Híbrida (Off-chain vs On-chain)
 `[IMAGE BRIEFING]`
-`STYLE`: Brutalist data-driven layout, technical blueprint, dark mode, high contrast.
-`SUBJECT`: A split architecture diagram. The left side represents off-chain high-speed routing (Fastify/BullMQ) with dynamic, fast-moving data lines. The right side represents on-chain trust and settlement (Soroban/Stellar) with solid, immutable, locked blocks. A glowing cryptographic bridge connects the two sides.
-`CONSTRAINTS`: NO robots, NO emojis, NO cartoonish elements. Must look like a professional, enterprise-grade infrastructure diagram designed for CTOs.
+`STYLE`: Brutalist data-driven layout, technical blueprint, high contrast, editorial spacing.
+`SUBJECT`: A split architecture diagram. The left side represents off-chain high-speed routing with rigid, structured data blocks. The right side represents on-chain trust and settlement with solid, immutable, locked geometry. A Signal Gold glow connects the two sides.
+`CONSTRAINTS`: NO robots, NO emojis, NO cartoonish elements. Must look like a professional, enterprise-grade infrastructure diagram designed for CTOs. Heavy typography (serif).
 
 ### Asset 3: x402 Payment Gateway (Fricção vs Resolução)
 `[IMAGE BRIEFING]`
-`STYLE`: Minimalist cyber-security visualization, dark mode.
-`SUBJECT`: A digital gateway or firewall. On one side, data packets (agent requests) are halted. In the center, a cryptographic token (representing x402 payment) acts as a key that opens the gate, allowing the packets to flow through to a secure execution zone.
-`CONSTRAINTS`: NO robots, NO emojis, NO coins or literal money bags. Use abstract representations of cryptography, access control, and data packets.
+`STYLE`: Minimalist cyber-security visualization, Institutional Brutalism.
+`SUBJECT`: A digital gateway or firewall represented as a massive, heavy structure. On one side, data packets (agent requests) are halted. In the center, a cryptographic token (representing x402 payment) glows with a soft Signal Gold aura, acting as a key that opens the gate.
+`CONSTRAINTS`: NO robots, NO emojis, NO coins or literal money bags. Use abstract representations of cryptography, access control, and data packets. Use warm parchment background (ROTA Bone).
 
 ---
 
@@ -34,19 +34,20 @@ Diretrizes estruturais para a implementação da Landing Page no frontend (Next.
 
 `[UI WIREFRAME SPEC]`
 `SECTION`: Global Layout
-`STYLE`: Minimalist, brutalist data-driven layout. Technical and dry.
+`STYLE`: Institutional Brutalism. Rigid grid, 0px border radius, intentional asymmetry.
 `COLORS`: 
-- Background: Deep blacks (`bg-gray-950` to `bg-black`).
-- Typography: Stark whites (`text-gray-50` para headings, `text-gray-400` para corpo).
-- Accents/Success: Technical green (`text-emerald-500`, `border-emerald-500`).
-`CONTENT`: Must include technical proof (txHash, Soroban contract IDs). Zero fluff. Sem emojis.
+- Background: ROTA Bone (`#fbf9f2`) base, `surface-container-low` (`#f6f4ec`) para distinção de seções.
+- Typography: ROTA Black (`#0a0a0a`).
+- Accents/Success: Signal Gold e Route Amber. Use glow (`box-shadow: 0 0 20px rgba(232, 195, 0, 0.3)`) para estados ativos.
+`TYPOGRAPHY`: Instrument Serif (ou Newsreader) para Display/Headlines com tracking fechado. Inter (ou IBM Plex Sans) para UI e body text.
+`CONTENT`: Must include technical proof (txHash, Soroban contract IDs). Zero fluff. Sem emojis. SEM dividers sólidos (1px lines).
 
 ### Estrutura de Blocos:
-1. **Nav**: Logo limpo, links para "Docs", "GitHub", "Smart Contracts". CTA secundário "View on Testnet".
-2. **Hero**: Headline brutalista. Subheadline focado em "Settle value with cryptographic proof". CTA primário: `Execute x402`. Fundo com o Asset 1.
-3. **The Friction**: Grid 2x2. Comparativo "Traditional Web3 Agent" vs "ROTA Protocol". Foco na eliminação de gestão de nonces e SDKs pesados.
-4. **Hybrid Trust**: Imagem do Asset 2. Texto focado na separação de responsabilidades (Speed vs Trust).
-5. **Live Proof (Terminal)**: Bloco com visual de terminal (`bg-black`, fonte monoespaçada) mostrando logs reais de uma execução x402 bem sucedida, finalizando com um `txHash` clicável.
+1. **Nav**: Logo minimalista. Uso de glassmorphism (surface semi-transparente com blur) sobre o ledger.
+2. **Hero**: Headline em Serif brutalista. Assimetria intencional. CTA primário (`rounded-none`, ROTA Black background, texto Bone, com glow dourado no hover). Fundo com o Asset 1.
+3. **The Friction**: Grid rígido. Comparativo "Traditional Web3 Agent" vs "ROTA Protocol". Separado por variação de tons (surface-container) ao invés de linhas divisórias.
+4. **Hybrid Trust**: Imagem do Asset 2. Margens massivas ("breathing room").
+5. **Live Proof (Terminal)**: Bloco estilo "sala de máquinas" mostrando logs reais de uma execução x402 bem sucedida, usando fonte monoespaçada e ghost borders.
 
 ---
 
