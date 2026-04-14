@@ -118,6 +118,9 @@ Explore the ROTA internal architecture and protocol rules:
 - [Soroban Bridge & Escrow](./docs/backend/backend-soroban-bridge.md)
 - [Contract Event Indexer](./docs/backend/contract-indexer.md)
 
+### User Interface / Design
+- [ROTA Landing Page (UI Concept)](./docs/landing_page.html)
+
 ---
 
 ## The GitHub Distribution Doctrine
